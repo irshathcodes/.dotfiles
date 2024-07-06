@@ -1,0 +1,1 @@
+tks="tmux kill-server"
