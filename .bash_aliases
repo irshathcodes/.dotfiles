@@ -1,1 +1,1 @@
-tks="tmux kill-server"
+alias tks="tmux kill-server"
