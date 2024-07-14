@@ -1,1 +1,2 @@
-alias tks="tmux kill-server"
+alias pn="pnpm"
+alias zj="zellij"

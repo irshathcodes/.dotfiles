@@ -121,3 +121,20 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 export PATH="$PATH:/opt/nvim-linux64/bin"
+
+# Set up fzf key bindings and fuzzy completion
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash
+
+
+# Define the function to open Neovim with the selected file
+fzf_nvim() {
+  local file
+  file=$(fzf)
+  if [[ -n "$file" ]]; then
+    nvim "$file"
+  fi
+}
+
+# Optionally alias a key combination to trigger the function
+bind '"\C-o": "fzf_nvim\n"'
+
