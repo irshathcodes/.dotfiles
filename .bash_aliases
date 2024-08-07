@@ -1,2 +1,3 @@
 alias pn="pnpm"
-alias zj="zellij"
+alias zel="zellij"
+alias bat='batcat'

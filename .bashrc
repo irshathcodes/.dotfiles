@@ -138,3 +138,11 @@ fzf_nvim() {
 # Optionally alias a key combination to trigger the function
 bind '"\C-o": "fzf_nvim\n"'
 
+
+# pnpm
+export PNPM_HOME="/home/irshath-wsl/.local/share/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+# pnpm end
