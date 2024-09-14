@@ -29,13 +29,17 @@ config.wsl_domains = {
 
 config.window_decorations = "RESIZE"
 
+local isWindows = string.find(wezterm.target_triple, "windows")
 
-if string.find(wezterm.target_triple, "windows") then
+if isWindows then
   config.default_domain = 'WSL:Ubuntu'
 end
 
-config.window_close_confirmation = 'NeverPrompt'
+if not isWindows then
+  config.font_size = 16
+end
 
+config.window_close_confirmation = 'NeverPrompt'
 config.audible_bell = "Disabled"
 
 local mux = wezterm.mux
