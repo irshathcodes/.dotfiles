@@ -4,14 +4,12 @@ local act = wezterm.action
 
 -- This will hold the configuration.
 local config = wezterm.config_builder()
+local is_windows = string.find(wezterm.target_triple, "windows")
 
 
-
--- This is where you actually apply your config choices
-
--- For example, changing the color scheme:
 config.color_scheme = 'OneHalfDark'
 config.font = wezterm.font 'Hack Nerd Font'
+config.max_fps = 120
 
 config.wsl_domains = {
   {
@@ -29,17 +27,13 @@ config.wsl_domains = {
 
 config.window_decorations = "RESIZE"
 
-local isWindows = string.find(wezterm.target_triple, "windows")
 
-if isWindows then
+if is_windows then
   config.default_domain = 'WSL:Ubuntu'
 end
 
-if not isWindows then
-  config.font_size = 16
-end
-
 config.window_close_confirmation = 'NeverPrompt'
+
 config.audible_bell = "Disabled"
 
 local mux = wezterm.mux
@@ -57,7 +51,10 @@ config.keys = {
   {
     mods = "LEADER",
     key = "c",
-    action = act.SpawnTab "CurrentPaneDomain"
+    action = act.SpawnCommandInNewTab {
+      domain = 'CurrentPaneDomain',
+      cwd = '~',
+    }
   },
   {
     mods = "CTRL",
@@ -65,12 +62,12 @@ config.keys = {
     action = act.CloseCurrentTab { confirm = false }
   },
   {
-    mods = "ALT",
+    mods = "LEADER",
     key = "h",
     action = act.ActivateTabRelative(-1)
   },
   {
-    mods = "ALT",
+    mods = "LEADER",
     key = "l",
     action = act.ActivateTabRelative(1)
   },
@@ -143,6 +140,21 @@ config.keys = {
     action = act.ActivateKeyTable {
       name = 'activate_pane',
       one_shot = false
+    },
+  },
+  {
+    key = ',',
+    mods = 'LEADER',
+    action = act.PromptInputLine {
+      description = 'Enter new name for tab',
+      action = wezterm.action_callback(function(window, pane, line)
+        -- line will be `nil` if they hit escape without entering anything
+        -- An empty string if they just hit enter
+        -- Or the actual line of text they wrote
+        if line then
+          window:active_tab():set_title(line)
+        end
+      end),
     },
   },
 }
