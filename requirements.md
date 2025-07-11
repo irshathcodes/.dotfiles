@@ -1,8 +1,9 @@
 ### Things to install and setup on a new computer.
 
-- wezterm
+- ghostty
 - fzf
 - nvm
 - nvim
 - pnpm
 - tldr
+- zed
