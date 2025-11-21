@@ -1,6 +1,8 @@
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
 
+vim.o.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions"
+
 -- Bootstrap Lazy package manager
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
@@ -15,7 +17,6 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
-
 -- Leader key must be set before plugins
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
@@ -29,7 +30,12 @@ require("lazy").setup({
 		priority = 1000,
 		opts = {},
 		config = function(_, opts)
-			require("kanagawa").setup(opts)
+			require("kanagawa").setup({
+				keywordStyle = { italic = false },
+				statementStyle = { bold = false },
+				commentStyle = { italic = false },
+				functionStyle = { bold = false },
+			})
 			vim.cmd.colorscheme("kanagawa")
 		end,
 	},
@@ -159,7 +165,20 @@ require("lazy").setup({
 						},
 					},
 				},
-				tailwindcss = {},
+				tailwindcss = {
+					settings = {
+						tailwindCSS = {
+							classFunctions = { "cva", "cx" },
+							experimental = {
+								classRegex = {
+									-- Match: const ANYTHING_CLS = "tailwind classes here"
+									{ "\\w*_CN\\s*=\\s*['\"`]([^'\"`]*)['\"`]" },
+									-- You can add more patterns as needed
+								},
+							},
+						},
+					},
+				},
 				html = {},
 				cssls = {},
 				jsonls = {},
@@ -197,19 +216,19 @@ require("lazy").setup({
 					map("gI", builtin.lsp_implementations, "Goto Implementation")
 					map("gt", builtin.lsp_type_definitions, "Type Definition")
 					map("<leader>ds", builtin.lsp_document_symbols, "Document Symbols")
-					map("<leader>ws", builtin.lsp_dynamic_workspace_symbols, "Workspace Symbols")
+					map("<leader>ps", builtin.lsp_dynamic_workspace_symbols, "Workspace Symbols")
 					map("<leader>rn", vim.lsp.buf.rename, "Rename")
 					map("<leader>ca", vim.lsp.buf.code_action, "Code Action")
 					map("gh", vim.lsp.buf.hover, "Hover Documentation")
 					map("gD", vim.lsp.buf.declaration, "Goto Declaration")
 
 					-- Ctrl+Space for code actions
-					vim.keymap.set(
-						{ "n", "v" },
-						"<C-Space>",
-						vim.lsp.buf.code_action,
-						{ buffer = event.buf, desc = "LSP: Code Action" }
-					)
+					-- vim.keymap.set(
+					-- 	{ "n", "v" },
+					-- 	"<C-Space>",
+					-- 	vim.lsp.buf.code_action,
+					-- 	{ buffer = event.buf, desc = "LSP: Code Action" }
+					-- )
 
 					-- Highlight references under cursor
 					local client = vim.lsp.get_client_by_id(event.data.client_id)
@@ -235,7 +254,7 @@ require("lazy").setup({
 		"folke/which-key.nvim",
 		event = "VeryLazy",
 		opts = {
-			delay = 1000,
+			delay = 2000,
 		},
 	},
 
@@ -272,7 +291,7 @@ require("lazy").setup({
 				},
 				performance = {
 					debounce = 150, -- Delay before showing completions (ms)
-					throttle = 60, -- Throttle completion requests
+					-- throttle = 60, -- Throttle completion requests
 				},
 				mapping = cmp.mapping.preset.insert({
 					["<C-n>"] = cmp.mapping.select_next_item(),
@@ -329,10 +348,9 @@ require("lazy").setup({
 				markdown = { "prettier" },
 				lua = { "stylua" },
 			},
-			-- format_on_save = {
-			-- 	timeout_ms = 500,
-			-- },
-			-- lsp_fallback = true,
+			format_after_save = {
+				lsp_format = "fallback",
+			},
 		},
 	},
 
@@ -381,7 +399,7 @@ require("lazy").setup({
 				},
 				offsets = {
 					{
-						filetype = "NvimTree",
+						filetype = "NeoTree",
 						text = "File Explorer",
 						text_align = "right",
 						separator = true,
@@ -391,42 +409,157 @@ require("lazy").setup({
 
 			bufferline.setup({ options = options })
 
-  vim.keymap.set("n", "<leader>[", function() bufferline.BufferLineCyclePrev() end, { desc = "Previous tab" })
-  vim.keymap.set("n", "<leader>]", function() bufferline.BufferLineCycleNext() end, { desc = "Next tab" })
-  vim.keymap.set("n", "<leader>1", function() bufferline.go_to(1, true) end, { desc = "Go to buffer 1",
-  silent = true })
-  vim.keymap.set("n", "<leader>2", function() bufferline.go_to(2, true) end, { desc = "Go to buffer 2",
-  silent = true })
-  vim.keymap.set("n", "<leader>3", function() bufferline.go_to(3, true) end, { desc = "Go to buffer 3",
-  silent = true })
-  vim.keymap.set("n", "<leader>4", function() bufferline.go_to(4, true) end, { desc = "Go to buffer 4",
-  silent = true })
-  vim.keymap.set("n", "<leader>5", function() bufferline.go_to(5, true) end, { desc = "Go to buffer 5",
-  silent = true })
-  vim.keymap.set("n", "<leader>6", function() bufferline.go_to(6, true) end, { desc = "Go to buffer 6",
-  silent = true })
-  vim.keymap.set("n", "<leader>7", function() bufferline.go_to(7, true) end, { desc = "Go to buffer 7",
-  silent = true })
-  vim.keymap.set("n", "<leader>8", function() bufferline.go_to(8, true) end, { desc = "Go to buffer 8",
-  silent = true })
-  vim.keymap.set("n", "<leader>9", function() bufferline.go_to(-1, true) end, { desc = "Go to last buffer",
-  silent = true })
+			-- Terminal mode escape
+			vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
+
+			local function close_all_buffers()
+				for _, e in ipairs(bufferline.get_elements().elements) do
+					vim.schedule(function()
+						vim.cmd("bd " .. e.id)
+					end)
+				end
+			end
+
+			vim.keymap.set("n", "<leader>ba", close_all_buffers, { desc = "Close all buffers" })
+
+			vim.keymap.set("n", "<leader>br", function()
+				bufferline.close_in_direction("right")
+			end, { desc = "Close buffers to the right" })
+
+			vim.keymap.set("n", "<leader>bl", function()
+				bufferline.close_in_direction("left")
+			end, { desc = "Close buffers to the left" })
+
+			vim.keymap.set("n", "<leader>w", function()
+				local buf = vim.api.nvim_get_current_buf()
+				-- vim.cmd("bp") -- go to previous buffer
+				vim.cmd("bd " .. buf) -- delete the buffer we just left
+			end, { desc = "Close buffer" })
+
+			vim.keymap.set("n", "<leader>bo", bufferline.close_others, { desc = "Close other buffers" })
+
+			vim.keymap.set("n", "<leader>]", ":BufferLineCycleNext<CR>", { silent = true, desc = "Go to next tab" })
+			vim.keymap.set("n", "<leader>[", ":BufferLineCyclePrev<CR>", { silent = true, desc = "Go to previous tab" })
+
+			vim.keymap.set("n", "<leader>1", function()
+				bufferline.go_to(1, true)
+			end, { desc = "Go to buffer 1", silent = true })
+
+			vim.keymap.set("n", "<leader>2", function()
+				bufferline.go_to(2, true)
+			end, { desc = "Go to buffer 2", silent = true })
+			vim.keymap.set("n", "<leader>3", function()
+				bufferline.go_to(3, true)
+			end, { desc = "Go to buffer 3", silent = true })
+			vim.keymap.set("n", "<leader>4", function()
+				bufferline.go_to(4, true)
+			end, { desc = "Go to buffer 4", silent = true })
+			vim.keymap.set("n", "<leader>5", function()
+				bufferline.go_to(5, true)
+			end, { desc = "Go to buffer 5", silent = true })
+			vim.keymap.set("n", "<leader>6", function()
+				bufferline.go_to(6, true)
+			end, { desc = "Go to buffer 6", silent = true })
+			vim.keymap.set("n", "<leader>7", function()
+				bufferline.go_to(7, true)
+			end, { desc = "Go to buffer 7", silent = true })
+			vim.keymap.set("n", "<leader>8", function()
+				bufferline.go_to(8, true)
+			end, { desc = "Go to buffer 8", silent = true })
+			vim.keymap.set("n", "<leader>9", function()
+				bufferline.go_to(-1, true)
+			end, { desc = "Go to last buffer", silent = true })
 		end,
 	},
+	-- {
+	-- 	"nvim-tree/nvim-tree.lua",
+	-- 	version = "*",
+	-- 	lazy = false,
+	-- 	dependencies = {
+	-- 		"nvim-tree/nvim-web-devicons",
+	-- 	},
+	-- 	config = function()
+	-- 		require("nvim-tree").setup({
+	-- 			view = {
+	-- 				side = "right",
+	-- 			},
+	--        auto_close = true
+	-- 		})
+	-- 	end,
+	-- },
 	{
-		"nvim-tree/nvim-tree.lua",
-		version = "*",
-		lazy = false,
+		"nvim-neo-tree/neo-tree.nvim",
+		branch = "v3.x",
 		dependencies = {
-			"nvim-tree/nvim-web-devicons",
+			"nvim-lua/plenary.nvim",
+			"MunifTanjim/nui.nvim",
+			"nvim-tree/nvim-web-devicons", -- optional, but recommended
 		},
-		config = function()
-			require("nvim-tree").setup({
-				view = {
-					side = "right",
+		lazy = false, -- neo-tree will lazily load itself
+		---@module 'neo-tree'
+		---@type neotree.Config
+
+		opts = {
+			close_if_last_window = true,
+			enable_git_status = true,
+			enable_diagnostics = true,
+			window = {
+				width = 30,
+				position = "right",
+				mappings = {
+					["%"] = {
+						"add",
+						config = {
+							show_path = "relative",
+						},
+					},
+					["d"] = "add_directory",
+					["R"] = "rename",
+					["D"] = "delete",
+					["-"] = "navigate_up",
 				},
-			})
-		end,
+			},
+			filesystem = {
+				hijack_netrw_behavior = "disabled",
+				filtered_items = {
+					visible = true,
+				},
+				follow_current_file = {
+					enabled = true,
+				},
+			},
+			event_handlers = {
+				{
+					event = "neo_tree_buffer_leave",
+					handler = function()
+						local shown_buffers = {}
+						for _, win in ipairs(vim.api.nvim_list_wins()) do
+							shown_buffers[vim.api.nvim_win_get_buf(win)] = true
+						end
+						for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+							if
+								not shown_buffers[buf]
+								and vim.api.nvim_buf_get_option(buf, "buftype") == "nofile"
+								and vim.api.nvim_buf_get_option(buf, "filetype") == "neo-tree"
+							then
+								vim.api.nvim_buf_delete(buf, {})
+							end
+						end
+					end,
+				},
+			},
+		},
+	},
+	{
+		"rmagatti/auto-session",
+		lazy = false,
+
+		---enables autocomplete for opts
+		---@module "auto-session"
+		---@type AutoSession.Config
+		opts = {
+			suppressed_dirs = { "~/", "~/Projects", "~/Downloads", "/" },
+		},
 	},
 })
 
@@ -452,8 +585,6 @@ vim.opt.cursorline = true
 vim.opt.updatetime = 250
 
 vim.diagnostic.config({ update_in_insert = true })
-
-
 
 -- Close floating windows (like hover docs) and clear search highlight on Escape
 vim.keymap.set("n", "<Esc>", function()
@@ -498,21 +629,35 @@ local function toggle_explorer()
 	end
 end
 
-vim.keymap.set("n", "<leader>e", vim.cmd.NvimTreeToggle, { desc = "Toggle file explorer" })
+vim.keymap.set("n", "<leader>e", ":Neotree toggle<CR>", { desc = "Toggle file explorer" })
 
 -- Telescope keymaps
 local builtin = require("telescope.builtin")
-vim.keymap.set("n", "<leader>ff", builtin.find_files, { desc = "Find files" })
-vim.keymap.set("n", "<leader>fg", builtin.live_grep, { desc = "Live grep" })
-vim.keymap.set("n", "<leader>fb", builtin.buffers, { desc = "Find buffers" })
-vim.keymap.set("n", "<leader>fh", builtin.help_tags, { desc = "Help tags" })
-vim.keymap.set("n", "<leader>fr", builtin.oldfiles, { desc = "Recent files" })
+vim.keymap.set("n", "<leader>sf", builtin.find_files, { desc = "Find files" })
+vim.keymap.set("n", "<leader>sg", builtin.live_grep, { desc = "Live grep" })
+vim.keymap.set("n", "<leader>sb", builtin.buffers, { desc = "Find buffers" })
+vim.keymap.set("n", "<leader>sh", builtin.help_tags, { desc = "Help tags" })
+vim.keymap.set("n", "<leader>sr", builtin.oldfiles, { desc = "Recent files" })
+vim.keymap.set("n", "<leader>sk", builtin.keymaps, { desc = "Search keymaps" })
 
 -- Diagnostic keymaps
 vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, { desc = "Previous diagnostic" })
 vim.keymap.set("n", "]d", vim.diagnostic.goto_next, { desc = "Next diagnostic" })
 vim.keymap.set("n", "ge", vim.diagnostic.open_float, { desc = "Show diagnostic under cursor" })
 vim.keymap.set("n", "<leader>q", vim.diagnostic.setloclist, { desc = "Diagnostic quickfix list" })
+
+vim.keymap.set("n", "<leader>E", function()
+	local current_buf = vim.api.nvim_get_current_buf()
+
+	-- Check if we're currently in neo-tree
+	if vim.bo[current_buf].filetype == "neo-tree" then
+		-- Jump back to the previous window (editor)
+		vim.cmd("wincmd p")
+	else
+		-- Focus neo-tree
+		vim.cmd("Neotree focus")
+	end
+end, { desc = "Toggle focus: editor ↔ tree" })
 
 -- Format buffer
 vim.keymap.set("n", "<leader>fp", function()
@@ -528,11 +673,6 @@ vim.keymap.set("n", "za", function()
 		print("Line wrap disabled")
 	end
 end, { desc = "Toggle line wrap" })
-
-
-
--- Terminal mode escape
-vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
 
 -- Highlight on yank
 vim.api.nvim_create_autocmd("TextYankPost", {
