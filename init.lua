@@ -584,6 +584,12 @@ vim.opt.signcolumn = "yes"
 vim.opt.cursorline = true
 vim.opt.updatetime = 250
 
+-- Fold settings
+vim.opt.foldmethod = "indent"
+-- vim.opt.foldlevel = 99 -- Allow folds to be created
+vim.opt.foldlevelstart = 99 -- Open all folds when opening a file
+vim.opt.foldenable = true
+
 vim.diagnostic.config({ update_in_insert = true })
 
 -- Close floating windows (like hover docs) and clear search highlight on Escape
@@ -663,16 +669,6 @@ end, { desc = "Toggle focus: editor ↔ tree" })
 vim.keymap.set("n", "<leader>fp", function()
 	require("conform").format({ async = true, lsp_fallback = true })
 end, { desc = "Format buffer" })
-
--- Toggle line wrap
-vim.keymap.set("n", "za", function()
-	vim.wo.wrap = not vim.wo.wrap
-	if vim.wo.wrap then
-		print("Line wrap enabled")
-	else
-		print("Line wrap disabled")
-	end
-end, { desc = "Toggle line wrap" })
 
 -- Highlight on yank
 vim.api.nvim_create_autocmd("TextYankPost", {
