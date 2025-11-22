@@ -87,7 +87,7 @@ require("lazy").setup({
 	{
 		"nvim-telescope/telescope.nvim",
 		tag = "0.1.8",
-		dependencies = { "nvim-lua/plenary.nvim" },
+		dependencies = { "nvim-lua/plenary.nvim", { "nvim-telescope/telescope-fzf-native.nvim", build = "make" } },
 		opts = {
 			defaults = {
 				file_ignore_patterns = {
@@ -95,12 +95,19 @@ require("lazy").setup({
 					".git/*",
 				},
 			},
+			extensions = {
+				fzf = {},
+			},
 			pickers = {
 				find_files = {
 					hidden = true, -- Show hidden files/folders, but still respect .gitignore
 				},
 			},
 		},
+		config = function(_, opts)
+			require("telescope").setup(opts)
+			require("telescope").load_extension("fzf")
+		end,
 	},
 
 	-- LSP Configuration
@@ -576,7 +583,7 @@ vim.opt.shiftwidth = 2
 vim.opt.smartindent = true
 vim.opt.wrap = true
 vim.opt.scrolloff = 8
-vim.opt.sidescrolloff = 8
+-- vim.opt.sidescrolloff = 8
 vim.opt.hlsearch = true
 vim.opt.incsearch = true
 vim.opt.ignorecase = true
