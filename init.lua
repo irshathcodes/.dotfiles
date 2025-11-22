@@ -88,25 +88,96 @@ require("lazy").setup({
 		"nvim-telescope/telescope.nvim",
 		tag = "0.1.8",
 		dependencies = { "nvim-lua/plenary.nvim", { "nvim-telescope/telescope-fzf-native.nvim", build = "make" } },
-		opts = {
-			defaults = {
+		config = function()
+			local h_pct = 0.90
+			local w_pct = 0.80
+			local w_limit = 75
+
+			local standard_setup = {
 				file_ignore_patterns = {
 					"node_modules/*",
 					".git/*",
 				},
-			},
-			extensions = {
-				fzf = {},
-			},
-			pickers = {
-				find_files = {
-					hidden = true, -- Show hidden files/folders, but still respect .gitignore
+				borderchars = { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
+				layout_strategy = "vertical",
+				layout_config = {
+					vertical = {
+						mirror = true,
+						prompt_position = "top",
+						width = function(_, cols, _)
+							return math.min(math.floor(w_pct * cols), w_limit)
+						end,
+						height = function(_, _, rows)
+							return math.floor(rows * h_pct)
+						end,
+						preview_cutoff = 10,
+						preview_height = 0.4,
+					},
 				},
-			},
-		},
-		config = function(_, opts)
-			require("telescope").setup(opts)
+			}
+
+			-- Function to generate config for grep and reference pickers
+			local horizontal_preview_config = {
+				layout_strategy = "horizontal",
+				sorting_strategy = "ascending",
+				layout_config = {
+					horizontal = {
+						height = 0.95,
+						width = 0.95,
+						preview_width = 0.35,
+						prompt_position = "top",
+						preview_cutoff = 0,
+					},
+				},
+				path_display = { "filename_first" },
+			}
+
+			require("telescope").setup({
+				defaults = vim.tbl_extend("error", standard_setup, {
+					sorting_strategy = "ascending",
+					path_display = { "filename_first" },
+					mappings = {
+						n = {
+							["o"] = require("telescope.actions.layout").toggle_preview,
+						},
+						i = {
+							["<C-o>"] = require("telescope.actions.layout").toggle_preview,
+						},
+					},
+				}),
+
+				pickers = {
+					find_files = {
+						hidden = true,
+						preview = {
+							hide_on_startup = true,
+						},
+						find_command = {
+							"fd",
+							"--type",
+							"f",
+							"-H",
+							"--strip-cwd-prefix",
+						},
+					},
+					live_grep = horizontal_preview_config,
+					lsp_references = horizontal_preview_config,
+					grep_string = horizontal_preview_config,
+				},
+				extensions = {
+					fzf = {},
+				},
+			})
+
 			require("telescope").load_extension("fzf")
+
+			-- Enable wrap in telescope preview windows
+			vim.api.nvim_create_autocmd("User", {
+				pattern = "TelescopePreviewerLoaded",
+				callback = function()
+					vim.wo.wrap = true
+				end,
+			})
 		end,
 	},
 
