@@ -61,3 +61,4 @@ window-padding-balance=true
 
 
 
+keybind = shift+enter=text:\x1b\r

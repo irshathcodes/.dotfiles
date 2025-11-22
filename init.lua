@@ -90,10 +90,14 @@ require("lazy").setup({
 		dependencies = { "nvim-lua/plenary.nvim" },
 		opts = {
 			defaults = {
-				mappings = {
-					i = {
-						["<C-h>"] = "which_key",
-					},
+				file_ignore_patterns = {
+					"node_modules/*",
+					".git/*",
+				},
+			},
+			pickers = {
+				find_files = {
+					hidden = true, -- Show hidden files/folders, but still respect .gitignore
 				},
 			},
 		},
@@ -217,8 +221,8 @@ require("lazy").setup({
 					map("gt", builtin.lsp_type_definitions, "Type Definition")
 					map("<leader>ds", builtin.lsp_document_symbols, "Document Symbols")
 					map("<leader>ps", builtin.lsp_dynamic_workspace_symbols, "Workspace Symbols")
-					map("<leader>rn", vim.lsp.buf.rename, "Rename")
-					map("<leader>ca", vim.lsp.buf.code_action, "Code Action")
+					map("<leader>cd", vim.lsp.buf.rename, "Rename")
+					map("<leader>c.", vim.lsp.buf.code_action, "Code Action")
 					map("gh", vim.lsp.buf.hover, "Hover Documentation")
 					map("gD", vim.lsp.buf.declaration, "Goto Declaration")
 
@@ -619,21 +623,6 @@ vim.keymap.set("n", "<C-d>", "<C-d>zz")
 vim.keymap.set("n", "<C-u>", "<C-u>zz")
 vim.keymap.set("n", "n", "nzzzv")
 vim.keymap.set("n", "N", "Nzzzv")
-
--- Better paste
-vim.keymap.set("x", "<leader>p", '"_dP')
-
--- File explorer toggle
-local function toggle_explorer()
-	local current_buf = vim.api.nvim_get_current_buf()
-	local buf_name = vim.api.nvim_buf_get_name(current_buf)
-
-	if string.match(buf_name, "^.*/$") or vim.bo[current_buf].filetype == "netrw" then
-		vim.cmd("bd")
-	else
-		vim.cmd("Ex")
-	end
-end
 
 vim.keymap.set("n", "<leader>e", ":Neotree toggle<CR>", { desc = "Toggle file explorer" })
 
