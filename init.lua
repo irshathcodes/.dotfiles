@@ -124,7 +124,7 @@ require("lazy").setup({
 					horizontal = {
 						height = 0.95,
 						width = 0.95,
-						preview_width = 0.35,
+						preview_width = 0.50,
 						prompt_position = "top",
 						preview_cutoff = 0,
 					},
@@ -294,23 +294,23 @@ require("lazy").setup({
 
 					local builtin = require("telescope.builtin")
 					map("gd", builtin.lsp_definitions, "Goto Definition")
-					map("gr", builtin.lsp_references, "Goto References")
+					vim.keymap.set("n", "gr", builtin.lsp_references, { desc = "Goto References", nowait = true })
 					map("gI", builtin.lsp_implementations, "Goto Implementation")
 					map("gt", builtin.lsp_type_definitions, "Type Definition")
-					map("<leader>ds", builtin.lsp_document_symbols, "Document Symbols")
+					map("<leader>bs", builtin.lsp_document_symbols, "Document Symbols")
 					map("<leader>ps", builtin.lsp_dynamic_workspace_symbols, "Workspace Symbols")
 					map("<leader>cd", vim.lsp.buf.rename, "Rename")
 					map("<leader>c.", vim.lsp.buf.code_action, "Code Action")
 					map("gh", vim.lsp.buf.hover, "Hover Documentation")
 					map("gD", vim.lsp.buf.declaration, "Goto Declaration")
 
-					-- Ctrl+Space for code actions
-					-- vim.keymap.set(
-					-- 	{ "n", "v" },
-					-- 	"<C-Space>",
-					-- 	vim.lsp.buf.code_action,
-					-- 	{ buffer = event.buf, desc = "LSP: Code Action" }
-					-- )
+					-- Ctrl+. for code actions
+					vim.keymap.set(
+						"i",
+						"<C-.>",
+						vim.lsp.buf.code_action,
+						{ buffer = event.buf, desc = "LSP: Code Action" }
+					)
 
 					-- Highlight references under cursor
 					local client = vim.lsp.get_client_by_id(event.data.client_id)
@@ -475,6 +475,16 @@ require("lazy").setup({
 			local options = {
 				numbers = "ordinal",
 				diagnostics = "nvim_lsp",
+				diagnostics_indicator = function(count, level, diagnostics_dict, context)
+					local s = ""
+					if diagnostics_dict.error then
+						s = s .. " %#DiagnosticError#" .. diagnostics_dict.error .. "%*"
+					end
+					if diagnostics_dict.warning then
+						s = s .. " %#DiagnosticWarn#" .. diagnostics_dict.warning .. "%*"
+					end
+					return s
+				end,
 				style_preset = {
 					bufferline.style_preset.no_italic,
 					bufferline.style_preset.no_bold,
@@ -489,7 +499,9 @@ require("lazy").setup({
 				},
 			}
 
-			bufferline.setup({ options = options })
+			bufferline.setup({
+				options = options,
+			})
 
 			-- Terminal mode escape
 			vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
@@ -708,6 +720,7 @@ vim.keymap.set("n", "<leader>e", ":Neotree toggle<CR>", { desc = "Toggle file ex
 local builtin = require("telescope.builtin")
 vim.keymap.set("n", "<leader>sf", builtin.find_files, { desc = "Find files" })
 vim.keymap.set("n", "<leader>sg", builtin.live_grep, { desc = "Live grep" })
+vim.keymap.set({ "n", "v" }, "<leader>su", builtin.grep_string, { desc = "Live grep" })
 vim.keymap.set("n", "<leader>sb", builtin.buffers, { desc = "Find buffers" })
 vim.keymap.set("n", "<leader>sh", builtin.help_tags, { desc = "Help tags" })
 vim.keymap.set("n", "<leader>sr", builtin.oldfiles, { desc = "Recent files" })
