@@ -54,10 +54,11 @@ adjust-cell-height = 20%
 # macos-titlebar-style = tabs
 macos-window-buttons = hidden
 macos-titlebar-style=hidden
-cursor-style = block
 window-padding-balance=true
 # term=xterm-256color
-
+shell-integration-features = ssh-terminfo
+shell-integration-features = ssh-env
+cursor-style-blink = false
 
 
 
