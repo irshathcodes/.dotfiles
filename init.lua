@@ -22,6 +22,7 @@ vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 
 -- Plugin configuration
+-- plugin start
 require("lazy").setup({
 	-- Colorscheme
 	{
@@ -254,7 +255,7 @@ require("lazy").setup({
 							experimental = {
 								classRegex = {
 									-- Match: const ANYTHING_CLS = "tailwind classes here"
-									{ "\\w*_CN\\s*=\\s*['\"`]([^'\"`]*)['\"`]" },
+									-- { "\\w*_CN\\s*=\\s*['\"`]([^'\"`]*)['\"`]" },
 									-- You can add more patterns as needed
 								},
 							},
@@ -297,20 +298,12 @@ require("lazy").setup({
 					vim.keymap.set("n", "gr", builtin.lsp_references, { desc = "Goto References", nowait = true })
 					map("gI", builtin.lsp_implementations, "Goto Implementation")
 					map("gt", builtin.lsp_type_definitions, "Type Definition")
-					map("<leader>bs", builtin.lsp_document_symbols, "Document Symbols")
-					map("<leader>ps", builtin.lsp_dynamic_workspace_symbols, "Workspace Symbols")
+					map("<leader>st", builtin.lsp_document_symbols, "Document Symbols")
+					map("<leader>sT", builtin.lsp_dynamic_workspace_symbols, "Workspace Symbols")
 					map("<leader>cd", vim.lsp.buf.rename, "Rename")
 					map("<leader>c.", vim.lsp.buf.code_action, "Code Action")
 					map("gh", vim.lsp.buf.hover, "Hover Documentation")
 					map("gD", vim.lsp.buf.declaration, "Goto Declaration")
-
-					-- Ctrl+. for code actions
-					vim.keymap.set(
-						"i",
-						"<C-.>",
-						vim.lsp.buf.code_action,
-						{ buffer = event.buf, desc = "LSP: Code Action" }
-					)
 
 					-- Highlight references under cursor
 					local client = vim.lsp.get_client_by_id(event.data.client_id)
@@ -359,8 +352,6 @@ require("lazy").setup({
 			local cmp = require("cmp")
 			local luasnip = require("luasnip")
 
-			require("luasnip.loaders.from_vscode").lazy_load()
-
 			cmp.setup({
 				snippet = {
 					expand = function(args)
@@ -369,11 +360,6 @@ require("lazy").setup({
 				},
 				completion = {
 					completeopt = "menu,menuone,noinsert",
-					keyword_length = 2, -- Start completing after 2 characters
-				},
-				performance = {
-					debounce = 150, -- Delay before showing completions (ms)
-					-- throttle = 60, -- Throttle completion requests
 				},
 				mapping = cmp.mapping.preset.insert({
 					["<C-n>"] = cmp.mapping.select_next_item(),
@@ -404,9 +390,9 @@ require("lazy").setup({
 				}),
 				sources = {
 					{ name = "nvim_lsp" },
-					{ name = "luasnip" },
 					{ name = "buffer" },
 					{ name = "path" },
+					{ name = "luasnip" },
 				},
 			})
 		end,
@@ -565,22 +551,6 @@ require("lazy").setup({
 			end, { desc = "Go to last buffer", silent = true })
 		end,
 	},
-	-- {
-	-- 	"nvim-tree/nvim-tree.lua",
-	-- 	version = "*",
-	-- 	lazy = false,
-	-- 	dependencies = {
-	-- 		"nvim-tree/nvim-web-devicons",
-	-- 	},
-	-- 	config = function()
-	-- 		require("nvim-tree").setup({
-	-- 			view = {
-	-- 				side = "right",
-	-- 			},
-	--        auto_close = true
-	-- 		})
-	-- 	end,
-	-- },
 	{
 		"nvim-neo-tree/neo-tree.nvim",
 		branch = "v3.x",
@@ -655,7 +625,29 @@ require("lazy").setup({
 			suppressed_dirs = { "~/", "~/Projects", "~/Downloads", "/" },
 		},
 	},
+	-- {
+	-- 	"windwp/nvim-ts-autotag",
+	-- 	opts = {},
+	-- },
+	{
+		"kevinhwang91/nvim-ufo",
+		event = "BufEnter",
+		dependencies = {
+			"kevinhwang91/promise-async",
+		},
+		config = function()
+			--- @diagnostic disable: unused-local
+			local ufo = require("ufo")
+
+			ufo.setup({
+				provider_selector = function(_bufnr, _filetype, _buftype)
+					return { "treesitter", "indent" }
+				end,
+			})
+		end,
+	},
 })
+-- plugins end
 
 -- Editor settings
 vim.opt.number = true
@@ -664,6 +656,7 @@ vim.opt.expandtab = true
 vim.opt.tabstop = 2
 vim.opt.shiftwidth = 2
 vim.opt.smartindent = true
+vim.opt.autoindent = true
 vim.opt.wrap = true
 vim.opt.scrolloff = 8
 -- vim.opt.sidescrolloff = 8
@@ -678,9 +671,13 @@ vim.opt.signcolumn = "yes"
 vim.opt.cursorline = true
 vim.opt.updatetime = 250
 
+vim.opt.undofile = true
+vim.opt.breakindent = true
+
 -- Fold settings
+vim.o.foldcolumn = "0"
 vim.opt.foldmethod = "indent"
--- vim.opt.foldlevel = 99 -- Allow folds to be created
+vim.opt.foldlevel = 99 -- Allow folds to be created
 vim.opt.foldlevelstart = 99 -- Open all folds when opening a file
 vim.opt.foldenable = true
 
