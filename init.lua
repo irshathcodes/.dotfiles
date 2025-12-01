@@ -3,6 +3,8 @@ vim.g.loaded_netrwPlugin = 1
 
 vim.o.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions"
 
+vim.o.confirm = true
+
 -- Bootstrap Lazy package manager
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
@@ -293,13 +295,11 @@ require("lazy").setup({
 
 					local builtin = require("telescope.builtin")
 					map("gd", builtin.lsp_definitions, "Goto Definition")
-					vim.keymap.set("n", "gr", builtin.lsp_references, { desc = "Goto References", nowait = true })
+					vim.keymap.set("n", "grr", builtin.lsp_references, { desc = "Goto References" })
 					map("gI", builtin.lsp_implementations, "Goto Implementation")
 					map("gt", builtin.lsp_type_definitions, "Type Definition")
 					map("<leader>st", builtin.lsp_document_symbols, "Document Symbols")
 					map("<leader>sT", builtin.lsp_dynamic_workspace_symbols, "Workspace Symbols")
-					map("<leader>cd", vim.lsp.buf.rename, "Rename")
-					map("<leader>c.", vim.lsp.buf.code_action, "Code Action")
 					map("gh", vim.lsp.buf.hover, "Hover Documentation")
 					map("gD", vim.lsp.buf.declaration, "Goto Declaration")
 
@@ -364,7 +364,14 @@ require("lazy").setup({
 			},
 
 			-- (Default) Only show the documentation popup when manually triggered
-			completion = { documentation = { auto_show = false } },
+			completion = {
+				documentation = { auto_show = false },
+				accept = {
+					auto_brackets = {
+						enabled = false,
+					},
+				},
+			},
 
 			signature = { enabled = true },
 
@@ -435,7 +442,6 @@ require("lazy").setup({
 			},
 		},
 	},
-
 	-- Tab/Buffer line
 	{
 		"akinsho/bufferline.nvim",
@@ -537,6 +543,16 @@ require("lazy").setup({
 				bufferline.go_to(-1, true)
 			end, { desc = "Go to last buffer", silent = true })
 		end,
+	},
+	{
+		"stevearc/oil.nvim",
+		---@module 'oil'
+		---@type oil.SetupOpts
+		opts = {
+			default_file_explorer = false,
+		},
+		dependencies = { "nvim-tree/nvim-web-devicons" }, -- use if you prefer nvim-web-devicons
+		lazy = false,
 	},
 	{
 		"nvim-neo-tree/neo-tree.nvim",
@@ -709,6 +725,7 @@ vim.keymap.set("n", "<leader>sb", builtin.buffers, { desc = "Find buffers" })
 vim.keymap.set("n", "<leader>sh", builtin.help_tags, { desc = "Help tags" })
 vim.keymap.set("n", "<leader>sr", builtin.oldfiles, { desc = "Recent files" })
 vim.keymap.set("n", "<leader>sk", builtin.keymaps, { desc = "Search keymaps" })
+vim.keymap.set("n", "<leader>sr", builtin.resume, { desc = "Search resume" })
 
 -- Diagnostic keymaps
 vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, { desc = "Previous diagnostic" })
