@@ -550,72 +550,41 @@ require("lazy").setup({
 		---@type oil.SetupOpts
 		opts = {
 			default_file_explorer = false,
+			view_options = {
+				show_hidden = true,
+			},
+			watch_for_changes = true,
+			keymaps = {
+				["<C-r>"] = "actions.refresh",
+			},
 		},
 		dependencies = { "nvim-tree/nvim-web-devicons" }, -- use if you prefer nvim-web-devicons
 		lazy = false,
 	},
 	{
-		"nvim-neo-tree/neo-tree.nvim",
-		branch = "v3.x",
-		dependencies = {
-			"nvim-lua/plenary.nvim",
-			"MunifTanjim/nui.nvim",
-			"nvim-tree/nvim-web-devicons", -- optional, but recommended
-		},
-		lazy = false, -- neo-tree will lazily load itself
-		---@module 'neo-tree'
-		---@type neotree.Config
-
+		"folke/snacks.nvim",
+		---@type snacks.Config
 		opts = {
-			close_if_last_window = true,
-			enable_git_status = true,
-			enable_diagnostics = true,
-			window = {
-				width = 30,
-				position = "right",
-				mappings = {
-					["%"] = {
-						"add",
-						config = {
-							show_path = "relative",
+			picker = {
+				sources = {
+					explorer = {
+						layout = {
+							auto_hide = { "input" },
+							layout = {
+								position = "right",
+								width = 0.30,
+							},
 						},
+						hidden = true,
+						ignored = true,
 					},
-					["d"] = "add_directory",
-					["R"] = "rename",
-					["D"] = "delete",
-					["-"] = "navigate_up",
-				},
-			},
-			filesystem = {
-				hijack_netrw_behavior = "disabled",
-				filtered_items = {
-					visible = true,
-				},
-				follow_current_file = {
-					enabled = true,
-				},
-			},
-			event_handlers = {
-				{
-					event = "neo_tree_buffer_leave",
-					handler = function()
-						local shown_buffers = {}
-						for _, win in ipairs(vim.api.nvim_list_wins()) do
-							shown_buffers[vim.api.nvim_win_get_buf(win)] = true
-						end
-						for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-							if
-								not shown_buffers[buf]
-								and vim.api.nvim_buf_get_option(buf, "buftype") == "nofile"
-								and vim.api.nvim_buf_get_option(buf, "filetype") == "neo-tree"
-							then
-								vim.api.nvim_buf_delete(buf, {})
-							end
-						end
-					end,
 				},
 			},
 		},
+		config = function(_, opts)
+			require("snacks").setup(opts)
+			vim.api.nvim_set_hl(0, "SnacksPickerTree", { fg = "#54546d", bg = "NONE" })
+		end,
 	},
 	{
 		"rmagatti/auto-session",
@@ -628,10 +597,6 @@ require("lazy").setup({
 			suppressed_dirs = { "~/", "~/Projects", "~/Downloads", "/" },
 		},
 	},
-	-- {
-	-- 	"windwp/nvim-ts-autotag",
-	-- 	opts = {},
-	-- },
 	{
 		"kevinhwang91/nvim-ufo",
 		event = "BufEnter",
@@ -714,7 +679,10 @@ vim.keymap.set("n", "<C-u>", "<C-u>zz")
 vim.keymap.set("n", "n", "nzzzv")
 vim.keymap.set("n", "N", "Nzzzv")
 
-vim.keymap.set("n", "<leader>e", ":Neotree toggle<CR>", { desc = "Toggle file explorer" })
+vim.keymap.set("n", "<leader>e", function()
+	local snacks = require("snacks.explorer")
+	snacks.open()
+end, { desc = "Toggle file explorer" })
 
 -- Telescope keymaps
 local builtin = require("telescope.builtin")
