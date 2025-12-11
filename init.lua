@@ -577,6 +577,14 @@ require("lazy").setup({
 						},
 						hidden = true,
 						ignored = true,
+						auto_close = false,
+						win = {
+							list = {
+								keys = {
+									["e"] = "toggle_maximize",
+								},
+							},
+						},
 					},
 				},
 			},
@@ -655,8 +663,14 @@ vim.diagnostic.config({ update_in_insert = true })
 vim.keymap.set("n", "<Esc>", function()
 	-- Close floating windows
 	for _, win in ipairs(vim.api.nvim_list_wins()) do
-		if vim.api.nvim_win_get_config(win).relative ~= "" then
-			vim.api.nvim_win_close(win, false)
+		local config = vim.api.nvim_win_get_config(win)
+		if config.relative ~= "" then
+			-- Skip snacks picker windows
+			local buf = vim.api.nvim_win_get_buf(win)
+			local ft = vim.bo[buf].filetype
+			if not ft:match("^snacks_picker") then
+				vim.api.nvim_win_close(win, false)
+			end
 		end
 	end
 	-- Clear search highlight
@@ -684,6 +698,8 @@ vim.keymap.set("n", "<leader>e", function()
 	snacks.open()
 end, { desc = "Toggle file explorer" })
 
+vim.keymap.set("n", "_", "<cmd>Oil . <CR>", { desc = "Open Oil.nvim" })
+
 -- Telescope keymaps
 local builtin = require("telescope.builtin")
 vim.keymap.set("n", "<leader>sf", builtin.find_files, { desc = "Find files" })
@@ -701,19 +717,6 @@ vim.keymap.set("n", "]d", vim.diagnostic.goto_next, { desc = "Next diagnostic" }
 vim.keymap.set("n", "ge", vim.diagnostic.open_float, { desc = "Show diagnostic under cursor" })
 vim.keymap.set("n", "<leader>q", vim.diagnostic.setloclist, { desc = "Diagnostic quickfix list" })
 
-vim.keymap.set("n", "<leader>E", function()
-	local current_buf = vim.api.nvim_get_current_buf()
-
-	-- Check if we're currently in neo-tree
-	if vim.bo[current_buf].filetype == "neo-tree" then
-		-- Jump back to the previous window (editor)
-		vim.cmd("wincmd p")
-	else
-		-- Focus neo-tree
-		vim.cmd("Neotree focus")
-	end
-end, { desc = "Toggle focus: editor ↔ tree" })
-
 -- Format buffer
 vim.keymap.set("n", "<leader>fp", function()
 	require("conform").format({ async = true, lsp_fallback = true })
@@ -727,6 +730,63 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 		vim.highlight.on_yank()
 	end,
 })
+
+-- Auto-delete buffers opened via jump-to-definition when jumping back
+local definition_jump_buffers = {}
+local pending_definition_jump = false
+
+-- Mark that we're about to do a definition jump
+local function mark_definition_jump()
+	pending_definition_jump = true
+end
+
+-- Track buffer if it was opened via definition jump
+vim.api.nvim_create_autocmd("BufEnter", {
+	group = vim.api.nvim_create_augroup("definition-jump-tracker", { clear = true }),
+	callback = function(args)
+		if pending_definition_jump then
+			pending_definition_jump = false
+			local bufnr = args.buf
+			-- Only track if it's a real file buffer
+			if vim.bo[bufnr].buftype == "" and vim.api.nvim_buf_get_name(bufnr) ~= "" then
+				definition_jump_buffers[bufnr] = true
+			end
+		end
+	end,
+})
+
+-- Override gd to mark definition jumps (for Telescope LSP definitions)
+vim.api.nvim_create_autocmd("LspAttach", {
+	group = vim.api.nvim_create_augroup("definition-jump-keymap", { clear = true }),
+	callback = function(event)
+		vim.keymap.set("n", "gd", function()
+			mark_definition_jump()
+			require("telescope.builtin").lsp_definitions()
+		end, { buffer = event.buf, desc = "LSP: Goto Definition (auto-cleanup)" })
+	end,
+})
+
+-- Smart Ctrl-O that deletes definition-jump buffers when leaving them
+vim.keymap.set("n", "<C-o>", function()
+	local current_buf = vim.api.nvim_get_current_buf()
+	local was_definition_jump = definition_jump_buffers[current_buf]
+
+	-- Execute the normal Ctrl-O jump using feedkeys
+	local ctrl_o = vim.api.nvim_replace_termcodes("<C-o>", true, false, true)
+	vim.api.nvim_feedkeys(ctrl_o, "n", false)
+
+	-- Use vim.schedule to check after the jump completes
+	vim.schedule(function()
+		local new_buf = vim.api.nvim_get_current_buf()
+		if was_definition_jump and new_buf ~= current_buf then
+			-- Check if buffer is still valid and not modified
+			if vim.api.nvim_buf_is_valid(current_buf) and not vim.bo[current_buf].modified then
+				pcall(vim.api.nvim_buf_delete, current_buf, { force = false })
+			end
+			definition_jump_buffers[current_buf] = nil
+		end
+	end)
+end, { desc = "Jump back and cleanup definition buffers" })
 
 vim.api.nvim_create_user_command("TermHl", function()
 	local b = vim.api.nvim_create_buf(false, true)
