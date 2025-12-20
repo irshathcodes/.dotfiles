@@ -19,7 +19,7 @@ export EDITOR="nvim"
 HISTFILE=~/.zsh_history
 HISTSIZE=50000
 SAVEHIST=50000
-setopt SHARE_HISTORY          # Share history between all sessions
+setopt INC_APPEND_HISTORY     # Write to history immediately, but don't share
 setopt HIST_SAVE_BY_COPY      # Write to history file safely (prevents corruption)
 setopt HIST_EXPIRE_DUPS_FIRST # Expire duplicate entries first when trimming
 setopt HIST_IGNORE_DUPS       # Don't record an entry that was just recorded again
@@ -39,39 +39,43 @@ export NVM_DIR="$HOME/.nvm"
 # Set up fzf key bindings and fuzzy completion
 source <(fzf --zsh)
 
-# Custom FZF keybindings
+# Custom FZF keybindings (excludes handled by ~/.fdignore)
+
 # ALT+C: CD into a folder starting from home directory
 fzf-cd-home-widget() {
   local dir
-  dir=$(find ~ -type d 2>/dev/null | fzf --height 40% --reverse --preview 'ls -la {}') && cd "$dir"
-  zle reset-prompt
+  dir=$(fd --type d --hidden -L --base-directory ~ | fzf --height 40% --reverse)
+  if [[ -n "$dir" ]]; then
+    cd ~/"$dir"
+    zle reset-prompt
+  fi
 }
 zle -N fzf-cd-home-widget
-bindkey '\ec' fzf-cd-home-widget  # ALT+C
+bindkey '\ec' fzf-cd-home-widget
 
 # ALT+D: CD into a directory from home and open neovim
 fzf-cd-nvim-widget() {
   local dir
-  dir=$(find ~ -type d 2>/dev/null | fzf --height 40% --reverse --preview 'ls -la {}')
+  dir=$(fd --type d --hidden -L --base-directory ~ | fzf --height 40% --reverse)
   if [[ -n "$dir" ]]; then
-    cd "$dir" && nvim .
+    cd ~/"$dir" && nvim .
     zle reset-prompt
   fi
 }
 zle -N fzf-cd-nvim-widget
-bindkey '\ed' fzf-cd-nvim-widget  # ALT+D
+bindkey '\ed' fzf-cd-nvim-widget
 
 # ALT+F: Open file from home directory with neovim (no cd)
 fzf-file-nvim-widget() {
   local file
-  file=$(find ~ -type f 2>/dev/null | fzf --height 40% --reverse --preview 'bat --color=always {} 2>/dev/null || cat {}')
+  file=$(fd --type f --hidden -L --base-directory ~ | fzf --height 40% --reverse)
   if [[ -n "$file" ]]; then
-    nvim "$file" </dev/tty
+    nvim ~/"$file" </dev/tty
   fi
   zle reset-prompt
 }
 zle -N fzf-file-nvim-widget
-bindkey '\ef' fzf-file-nvim-widget  # ALT+F
+bindkey '\ef' fzf-file-nvim-widget
 
 
 ##

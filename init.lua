@@ -59,6 +59,7 @@ require("lazy").setup({
 				"json",
 				"html",
 				"css",
+				"bash",
 			},
 			sync_install = false,
 			auto_install = true,
@@ -214,6 +215,7 @@ require("lazy").setup({
 					"cssls",
 					"jsonls",
 					"lua_ls",
+					"bashls",
 				},
 				automatic_installation = true,
 			})
@@ -265,6 +267,7 @@ require("lazy").setup({
 				html = {},
 				cssls = {},
 				jsonls = {},
+				bashls = {},
 				lua_ls = {
 					settings = {
 						Lua = {
