@@ -1,5 +1,25 @@
+[user]
+	name = Irshath
+	email = irshathv2@gmail.com
 [init]
 	defaultBranch = main
-[user]
-	email = irshath700@gmail.com
-	name = Irshath
+[color]
+	ui = auto
+[core]
+	editor = nvim
+[push]
+	autoSetupRemote = true
+[pull]
+	rebase = false
+[rerere]
+	enabled = true
+[diff]
+    tool = kitty
+    guitool = kitty.gui
+[difftool]
+    prompt = false
+    trustExitCode = true
+[difftool "kitty"]
+    cmd = kitten diff $LOCAL $REMOTE
+[difftool "kitty.gui"]
+    cmd = kitten diff $LOCAL $REMOTE

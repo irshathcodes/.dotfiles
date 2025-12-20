@@ -29,6 +29,11 @@ setopt HIST_IGNORE_SPACE      # Don't record entries starting with a space
 
 [[ -f ~/.zsh_aliases ]] && source ~/.zsh_aliases
 
+# Enable vi mode in zsh
+# bindkey -v
+# export KEYTIMEOUT=1
+
+
 
 # nvm stuff
 export NVM_DIR="$HOME/.nvm"
