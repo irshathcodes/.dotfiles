@@ -43,6 +43,7 @@ export NVM_DIR="$HOME/.nvm"
 
 # Set up fzf key bindings and fuzzy completion
 source <(fzf --zsh)
+source ~/.dotfiles/fzf-commands.sh
 
 # Custom FZF keybindings (excludes handled by ~/.fdignore)
 
