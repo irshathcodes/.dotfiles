@@ -16,7 +16,7 @@ function fgf() {
 
 	local -r header=$(cat <<-EOF
 		> CTRL-S to switch between Add Mode and Reset mode
-		> CTRL-F for diff preview
+		> enter for diff preview, ctrl-enter for staging / resetting
 		> ALT-E to open files in your editor
 		EOF
 	)
@@ -42,11 +42,11 @@ function fgf() {
 	--prompt="Add > " \
 	--header "$add_header" \
 	--header-first \
-	--bind="ctrl-f:execute(echo {+} | $strip | xargs git difftool --no-symlinks)" \
+	--bind="enter:execute(echo {+} | $strip | xargs git difftool --no-symlinks)" \
 	--bind="ctrl-e:execute(git difftool --no-symlinks --dir-diff)" \
 	--bind="ctrl-s:transform:[[ \$FZF_PROMPT =~ '$prompt_add' ]] && echo '$mode_reset' || echo '$mode_add'" \
-	--bind="enter:execute($enter_cmd)" \
-	--bind="enter:+reload([[ \$FZF_PROMPT =~ '$prompt_add' ]] && $git_unstaged_files || $git_staged_files)" \
+	--bind="alt-enter:execute($enter_cmd)" \
+	--bind="alt-enter:+reload([[ \$FZF_PROMPT =~ '$prompt_add' ]] && $git_unstaged_files || $git_staged_files)" \
 	--bind="enter:+refresh-preview" \
 	--bind="alt-p:execute(echo {+} | $strip | xargs git add --patch)" \
 	--bind="alt-p:+reload($git_unstaged_files)" \

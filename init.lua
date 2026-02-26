@@ -500,106 +500,18 @@ require("lazy").setup({
 			end,
 		},
 	},
-	-- Tab/Buffer line
 	{
-		"akinsho/bufferline.nvim",
-		version = "*",
-		dependencies = "nvim-tree/nvim-web-devicons",
-		enabled = vim.g.open_mode ~= 1,
-		config = function()
-			local bufferline = require("bufferline")
-
-			local options = {
-				numbers = "ordinal",
-				diagnostics = "nvim_lsp",
-				diagnostics_indicator = function(_count, _level, diagnostics_dict, _context)
-					local s = ""
-					if diagnostics_dict.error then
-						s = s .. " %#DiagnosticError#" .. diagnostics_dict.error .. "%*"
-					end
-					if diagnostics_dict.warning then
-						s = s .. " %#DiagnosticWarn#" .. diagnostics_dict.warning .. "%*"
-					end
-					return s
-				end,
-				style_preset = {
-					bufferline.style_preset.no_italic,
-					bufferline.style_preset.no_bold,
+		"nvim-lualine/lualine.nvim",
+		dependencies = { "nvim-tree/nvim-web-devicons" },
+		config = function(_, _)
+			require("lualine").setup({
+				sections = {
+					lualine_a = {},
+					lualine_b = { "branch", "diff" },
+					lualine_c = { { "filename", path = 1 } },
+					lualine_x = { "diagnostics" },
 				},
-				offsets = {
-					{
-						filetype = "NeoTree",
-						text = "File Explorer",
-						text_align = "right",
-						separator = true,
-					},
-				},
-			}
-
-			bufferline.setup({
-				options = options,
 			})
-
-			-- Terminal mode escape
-			vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
-
-			local function close_all_buffers()
-				for _, e in ipairs(bufferline.get_elements().elements) do
-					vim.schedule(function()
-						vim.cmd("bd " .. e.id)
-					end)
-				end
-			end
-
-			vim.keymap.set("n", "<leader>ba", close_all_buffers, { desc = "Close all buffers" })
-
-			vim.keymap.set("n", "<leader>br", function()
-				bufferline.close_in_direction("right")
-			end, { desc = "Close buffers to the right" })
-
-			vim.keymap.set("n", "<leader>bl", function()
-				bufferline.close_in_direction("left")
-			end, { desc = "Close buffers to the left" })
-
-			vim.keymap.set("n", "<leader>w", function()
-				local buf = vim.api.nvim_get_current_buf()
-				-- vim.cmd("bp") -- go to previous buffer
-				vim.cmd("bd " .. buf) -- delete the buffer we just left
-			end, { desc = "Close buffer" })
-
-			vim.keymap.set("n", "<leader>bo", bufferline.close_others, { desc = "Close other buffers" })
-
-			vim.keymap.set("n", "<leader>]", ":BufferLineCycleNext<CR>", { silent = true, desc = "Go to next tab" })
-			vim.keymap.set("n", "<leader>[", ":BufferLineCyclePrev<CR>", { silent = true, desc = "Go to previous tab" })
-
-			vim.keymap.set("n", "<leader>1", function()
-				bufferline.go_to(1, true)
-			end, { desc = "Go to buffer 1", silent = true })
-
-			vim.keymap.set("n", "<leader>2", function()
-				bufferline.go_to(2, true)
-			end, { desc = "Go to buffer 2", silent = true })
-			vim.keymap.set("n", "<leader>3", function()
-				bufferline.go_to(3, true)
-			end, { desc = "Go to buffer 3", silent = true })
-			vim.keymap.set("n", "<leader>4", function()
-				bufferline.go_to(4, true)
-			end, { desc = "Go to buffer 4", silent = true })
-			vim.keymap.set("n", "<leader>5", function()
-				bufferline.go_to(5, true)
-			end, { desc = "Go to buffer 5", silent = true })
-			vim.keymap.set("n", "<leader>6", function()
-				bufferline.go_to(6, true)
-			end, { desc = "Go to buffer 6", silent = true })
-			vim.keymap.set("n", "<leader>7", function()
-				bufferline.go_to(7, true)
-			end, { desc = "Go to buffer 7", silent = true })
-			vim.keymap.set("n", "<leader>8", function()
-				bufferline.go_to(8, true)
-			end, { desc = "Go to buffer 8", silent = true })
-			vim.keymap.set("n", "<leader>9", function()
-				bufferline.go_to(-1, true)
-			end, { desc = "Go to last buffer", silent = true })
 		end,
 	},
 	{
@@ -823,28 +735,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
 		end, { buffer = event.buf, desc = "LSP: Goto Definition (auto-cleanup)" })
 	end,
 })
-
--- Smart Ctrl-O that deletes definition-jump buffers when leaving them
-vim.keymap.set("n", "<C-o>", function()
-	local current_buf = vim.api.nvim_get_current_buf()
-	local was_definition_jump = definition_jump_buffers[current_buf]
-
-	-- Execute the normal Ctrl-O jump using feedkeys
-	local ctrl_o = vim.api.nvim_replace_termcodes("<C-o>", true, false, true)
-	vim.api.nvim_feedkeys(ctrl_o, "n", false)
-
-	-- Use vim.schedule to check after the jump completes
-	vim.schedule(function()
-		local new_buf = vim.api.nvim_get_current_buf()
-		if was_definition_jump and new_buf ~= current_buf then
-			-- Check if buffer is still valid and not modified
-			if vim.api.nvim_buf_is_valid(current_buf) and not vim.bo[current_buf].modified then
-				pcall(vim.api.nvim_buf_delete, current_buf, { force = false })
-			end
-			definition_jump_buffers[current_buf] = nil
-		end
-	end)
-end, { desc = "Jump back and cleanup definition buffers" })
 
 vim.api.nvim_create_user_command("TermHl", function()
 	local b = vim.api.nvim_create_buf(false, true)
