@@ -185,6 +185,49 @@ require("lazy").setup({
 		end,
 	},
 
+	{
+		"ThePrimeagen/harpoon",
+		branch = "harpoon2",
+		dependencies = { "nvim-lua/plenary.nvim" },
+		config = function()
+			local harpoon = require("harpoon")
+			harpoon.setup()
+
+			vim.keymap.set("n", "<leader>a", function()
+				harpoon:list():add()
+			end)
+
+			vim.keymap.set("n", "<leader>f", function()
+				harpoon.ui:toggle_quick_menu(harpoon:list())
+			end)
+
+			vim.keymap.set("n", "<leader>1", function()
+				harpoon:list():select(1)
+			end)
+			vim.keymap.set("n", "<leader>2", function()
+				harpoon:list():select(2)
+			end)
+			vim.keymap.set("n", "<leader>3", function()
+				harpoon:list():select(3)
+			end)
+			vim.keymap.set("n", "<leader>4", function()
+				harpoon:list():select(4)
+			end)
+
+			-- Toggle previous & next buffers stored within Harpoon list
+			vim.keymap.set("n", "<leader>[", function()
+				harpoon:list():prev()
+			end)
+			vim.keymap.set("n", "<leader>]", function()
+				harpoon:list():next()
+			end)
+
+			local harpoon_extensions = require("harpoon.extensions")
+
+			harpoon:extend(harpoon_extensions.builtins.highlight_current_file())
+		end,
+	},
+
 	-- LSP Configuration
 	{
 		"neovim/nvim-lspconfig",
@@ -508,7 +551,7 @@ require("lazy").setup({
 				sections = {
 					lualine_a = {},
 					lualine_b = { "branch", "diff" },
-					lualine_c = { { "filename", path = 1 } },
+					lualine_c = { { "filename", path = 1, symbols = { modified = " ●" } } },
 					lualine_x = { "diagnostics" },
 				},
 			})
@@ -686,11 +729,6 @@ vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, { desc = "Previous diagnosti
 vim.keymap.set("n", "]d", vim.diagnostic.goto_next, { desc = "Next diagnostic" })
 vim.keymap.set("n", "ge", vim.diagnostic.open_float, { desc = "Show diagnostic under cursor" })
 vim.keymap.set("n", "<leader>q", vim.diagnostic.setloclist, { desc = "Diagnostic quickfix list" })
-
--- Format buffer
-vim.keymap.set("n", "<leader>fp", function()
-	require("conform").format({ async = true, lsp_fallback = true })
-end, { desc = "Format buffer" })
 
 -- Highlight on yank
 vim.api.nvim_create_autocmd("TextYankPost", {
