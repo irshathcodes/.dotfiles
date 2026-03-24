@@ -706,6 +706,10 @@ vim.keymap.set("n", "<C-u>", "<C-u>zz")
 vim.keymap.set("n", "n", "nzzzv")
 vim.keymap.set("n", "N", "Nzzzv")
 
+-- Paragraph motions without jumplist
+vim.keymap.set({ "n", "v" }, "{", "<cmd>keepjumps normal! {<CR>")
+vim.keymap.set({ "n", "v" }, "}", "<cmd>keepjumps normal! }<CR>")
+
 vim.keymap.set("n", "<leader>e", function()
 	local snacks = require("snacks.explorer")
 	snacks.open()
