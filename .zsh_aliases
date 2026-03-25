@@ -1,0 +1,24 @@
+alias td='nvim ~/Documents/todos.md'
+
+alias kuat="kubectl --context arn:aws:eks:us-west-2:559076975273:cluster/ppx-uat"
+alias ksand="kubectl --context arn:aws:eks:us-west-2:559076975273:cluster/PPX-sandbox"
+alias kprod="kubectl --context arn:aws:eks:us-west-2:559076975273:cluster/PPX-production"
+
+alias gs="git status"
+alias ga="fgf"
+alias gc="git commit"
+alias gcm="git commit -m"
+alias gp="git push"
+alias gpl="git pull"
+alias gfo="git fetch origin"
+alias gco="git checkout"
+alias gcob="git checkout -b"
+alias gd="git difftool --no-symlinks --dir-diff"
+alias gds="git difftool --staged --no-symlinks --dir-diff"
+alias gl="git log --oneline"
+alias glg="git log --graph --oneline"
+alias glog="git log --graph --pretty=format:'%C(yellow)%h%C(reset) - %C(cyan)%an%C(reset), %C(green)%ar%C(reset) : %s'"
+alias ssh="kitten ssh"
+alias gcai="deno run --allow-env --allow-net --allow-read --allow-run ~/.dotfiles/git-commit.ts"
+
+
