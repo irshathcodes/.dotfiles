@@ -269,9 +269,26 @@ require("lazy").setup({
 			-- Capabilities for completion
 			local capabilities = vim.lsp.protocol.make_client_capabilities()
 
+			-- Helper: detect if a standalone file uses Deno-style npm: imports
+			local function has_npm_imports(fname)
+				local ok, lines = pcall(vim.fn.readfile, fname, "", 50)
+				if not ok then
+					return false
+				end
+				for _, line in ipairs(lines) do
+					if line:match('["\']npm:') then
+						return true
+					end
+				end
+				return false
+			end
+
 			-- LSP server configurations
+			local lsputil = require("lspconfig.util")
 			local servers = {
 				ts_ls = {
+					root_dir = lsputil.root_pattern("package.json", "tsconfig.json"),
+					single_file_support = false,
 					settings = {
 						typescript = {
 							inlayHints = {
@@ -323,6 +340,18 @@ require("lazy").setup({
 						},
 					},
 				},
+				denols = {
+					cmd = { vim.fn.expand("~/.deno/bin/deno"), "lsp" },
+					root_dir = function(fname)
+						return lsputil.root_pattern("deno.json", "deno.jsonc")(fname)
+							or (has_npm_imports(fname) and vim.fn.fnamemodify(fname, ":h"))
+							or nil
+					end,
+					single_file_support = false,
+					settings = {
+						deno = { enable = true },
+					},
+				},
 			}
 
 			-- Setup all LSP servers
@@ -330,6 +359,7 @@ require("lazy").setup({
 				config.capabilities = capabilities
 				require("lspconfig")[server].setup(config)
 			end
+
 
 			-- LSP keybindings
 			vim.api.nvim_create_autocmd("LspAttach", {
