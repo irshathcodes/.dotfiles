@@ -20,5 +20,6 @@ alias glg="git log --graph --oneline"
 alias glog="git log --graph --pretty=format:'%C(yellow)%h%C(reset) - %C(cyan)%an%C(reset), %C(green)%ar%C(reset) : %s'"
 alias ssh="kitten ssh"
 alias gcai="deno run --allow-env --allow-net --allow-read --allow-run ~/.dotfiles/git-commit.ts"
+alias la="ls -a"
 
 
