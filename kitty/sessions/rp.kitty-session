@@ -1,0 +1,26 @@
+new_tab nvim
+layout fat
+cd /Users/irshath/projects/rp
+launch 'kitty-unserialize-data={"id": 1, "cmd_at_shell_startup": "nvim ."}'
+focus
+
+new_tab ai
+layout fat
+cd /Users/irshath/projects/rp
+launch 'kitty-unserialize-data={"id": 2}'
+focus
+
+new_tab server
+layout fat
+cd /Users/irshath/projects/rp
+launch 'kitty-unserialize-data={"id": 3}'
+focus
+
+new_tab
+layout fat
+cd /Users/irshath/projects/rp
+launch 'kitty-unserialize-data={"id": 4}'
+focus
+
+focus_tab 0
+
