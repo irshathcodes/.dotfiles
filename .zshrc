@@ -14,6 +14,7 @@ setopt PROMPT_SUBST
 export PS1="%B%F{blue}%~%f%b%F{yellow}\${vcs_info_msg_0_}%f "
 
 export EDITOR="nvim"
+bindkey -e  # force emacs keybindings (EDITOR=nvim auto-enables vi mode otherwise)
 
 # History configuration
 HISTFILE=~/.zsh_history
@@ -122,6 +123,28 @@ fe() {
   [[ -n "$files" ]] && ${EDITOR:-nvim} "${files[@]}"
 }
 
+ ghdiff() {                                                                                                            
+    local pr=$1                                                   
+    [[ -z "$pr" ]] && { echo "usage: ghdiff <pr>"; return 1; }
+                                                                                                                        
+    local base
+    base=$(gh pr view "$pr" --json baseRefName -q .baseRefName) || return 1                                             
+                                                                                                                        
+    local tmp; tmp=$(mktemp -d -t "ghdiff-$pr")
+    git fetch origin "pull/$pr/head:refs/ghdiff/$pr" >/dev/null 2>&1 || return 1                                        
+    git fetch origin "$base" >/dev/null 2>&1                                                                            
+                                                                                                                        
+    git worktree add --detach "$tmp/base" "origin/$base" >/dev/null                                                     
+    git worktree add --detach "$tmp/head" "refs/ghdiff/$pr" >/dev/null                                                  
+                                                                                                                        
+    kitten diff "$tmp/base" "$tmp/head"
+                                                                                                                        
+    git worktree remove --force "$tmp/head" >/dev/null            
+    git worktree remove --force "$tmp/base" >/dev/null
+    git update-ref -d "refs/ghdiff/$pr"                                                                                 
+    rm -rf "$tmp"
+  }
+
 #
 . "/Users/irshath/.deno/env"
 # pnpm
@@ -150,6 +173,7 @@ export PATH="$HOME/.local/bin:$PATH"
 
 # Zsh autosuggestions
 source $HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+bindkey '^Y' autosuggest-accept
 
 
 
@@ -166,3 +190,6 @@ eval "$(pyenv virtualenv-init -)"
 export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"
 
 export PATH="$HOME/.local/bin:$PATH"
+
+# opencode
+export PATH=/Users/irshath/.opencode/bin:$PATH

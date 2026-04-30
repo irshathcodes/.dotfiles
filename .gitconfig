@@ -20,6 +20,6 @@
     prompt = false
     trustExitCode = true
 [difftool "kitty"]
-    cmd = kitten diff $LOCAL $REMOTE
+    cmd = kitten diff $LOCAL $REMOTE; kitty @ load-config
 [difftool "kitty.gui"]
-    cmd = kitten diff $LOCAL $REMOTE
+    cmd = kitten diff $LOCAL $REMOTE; kitty @ load-config

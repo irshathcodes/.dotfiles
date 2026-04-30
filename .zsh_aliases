@@ -18,8 +18,12 @@ alias gds="git difftool --staged --no-symlinks --dir-diff"
 alias gl="git log --oneline"
 alias glg="git log --graph --oneline"
 alias glog="git log --graph --pretty=format:'%C(yellow)%h%C(reset) - %C(cyan)%an%C(reset), %C(green)%ar%C(reset) : %s'"
+alias ghpa="gh pr review --approve"
 alias ssh="kitten ssh"
 alias gcai="deno run --allow-env --allow-net --allow-read --allow-run ~/.dotfiles/git-commit.ts"
 alias la="ls -a"
+alias cw="CLAUDE_CONFIG_DIR=$HOME/.claude-w claude --dangerously-skip-permissions"
+alias cw2="CLAUDE_CONFIG_DIR=$HOME/.claude-w-2 claude --dangerously-skip-permissions"
+alias cm="CLAUDE_CONFIG_DIR=$HOME/.claude-p claude --dangerously-skip-permissions"
 
 
