@@ -280,11 +280,21 @@ require("lazy").setup({
 					end
 
 					map("gd", vim.lsp.buf.definition, "Goto Definition")
-					vim.keymap.set("n", "grr", function() Snacks.picker.lsp_references() end, { desc = "Goto References" })
-					map("gI", function() Snacks.picker.lsp_implementations() end, "Goto Implementation")
-					map("gt", function() Snacks.picker.lsp_type_definitions() end, "Type Definition")
-					map("<leader>st", function() Snacks.picker.lsp_symbols() end, "Document Symbols")
-					map("<leader>sT", function() Snacks.picker.lsp_workspace_symbols() end, "Workspace Symbols")
+					vim.keymap.set("n", "grr", function()
+						Snacks.picker.lsp_references()
+					end, { desc = "Goto References" })
+					map("gI", function()
+						Snacks.picker.lsp_implementations()
+					end, "Goto Implementation")
+					map("gt", function()
+						Snacks.picker.lsp_type_definitions()
+					end, "Type Definition")
+					map("<leader>st", function()
+						Snacks.picker.lsp_symbols()
+					end, "Document Symbols")
+					map("<leader>sT", function()
+						Snacks.picker.lsp_workspace_symbols()
+					end, "Workspace Symbols")
 					map("gh", vim.lsp.buf.hover, "Hover Documentation")
 					map("gD", vim.lsp.buf.declaration, "Goto Declaration")
 
@@ -554,7 +564,7 @@ require("lazy").setup({
 						},
 					},
 					smart = {
-						layout = { preview = false },
+						layout = { preset = "dropdown", preview = false },
 					},
 				},
 			},
@@ -679,15 +689,33 @@ end, { desc = "Toggle file explorer" })
 vim.keymap.set("n", "-", "<cmd>Oil .<CR>", { desc = "Open Oil.nvim" })
 
 -- Picker keymaps (snacks.nvim)
-vim.keymap.set("n", "<leader>sf", function() Snacks.picker.smart() end, { desc = "Find files (smart)" })
-vim.keymap.set("n", "<leader>sg", function() Snacks.picker.grep() end, { desc = "Live grep" })
-vim.keymap.set({ "n", "v" }, "<leader>su", function() Snacks.picker.grep_word() end, { desc = "Grep word under cursor" })
-vim.keymap.set("n", "<leader>sb", function() Snacks.picker.buffers() end, { desc = "Find buffers" })
-vim.keymap.set("n", "<leader>sh", function() Snacks.picker.help() end, { desc = "Help tags" })
-vim.keymap.set("n", "<leader>so", function() Snacks.picker.recent() end, { desc = "Recent files" })
-vim.keymap.set("n", "<leader>sk", function() Snacks.picker.keymaps() end, { desc = "Search keymaps" })
-vim.keymap.set("n", "<leader>sr", function() Snacks.picker.resume() end, { desc = "Resume last picker" })
-vim.keymap.set("n", "<leader>sd", function() Snacks.picker.diagnostics() end, { desc = "Workspace diagnostics" })
+vim.keymap.set("n", "<leader>sf", function()
+	Snacks.picker.smart()
+end, { desc = "Find files (smart)" })
+vim.keymap.set("n", "<leader>sg", function()
+	Snacks.picker.grep()
+end, { desc = "Live grep" })
+vim.keymap.set({ "n", "v" }, "<leader>su", function()
+	Snacks.picker.grep_word()
+end, { desc = "Grep word under cursor" })
+vim.keymap.set("n", "<leader>sb", function()
+	Snacks.picker.buffers()
+end, { desc = "Find buffers" })
+vim.keymap.set("n", "<leader>sh", function()
+	Snacks.picker.help()
+end, { desc = "Help tags" })
+vim.keymap.set("n", "<leader>so", function()
+	Snacks.picker.recent()
+end, { desc = "Recent files" })
+vim.keymap.set("n", "<leader>sk", function()
+	Snacks.picker.keymaps()
+end, { desc = "Search keymaps" })
+vim.keymap.set("n", "<leader>sr", function()
+	Snacks.picker.resume()
+end, { desc = "Resume last picker" })
+vim.keymap.set("n", "<leader>sd", function()
+	Snacks.picker.diagnostics()
+end, { desc = "Workspace diagnostics" })
 
 -- Diagnostic keymaps
 vim.keymap.set("n", "[d", function()
