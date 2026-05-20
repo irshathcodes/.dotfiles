@@ -46,10 +46,12 @@ def draw_right_status(draw_data, screen, tab):
 
 
 def draw_tab(draw_data, screen, tab, before, max_title_length, index, is_last, extra_data):
-    draw_tab_with_powerline(draw_data, screen, tab, before, max_title_length, index, is_last, extra_data)
+    end = draw_tab_with_powerline(draw_data, screen, tab, before, max_title_length, index, is_last, extra_data)
 
     if(is_last):
         draw_right_status(draw_data, screen, tab)
+
+    return end
 
 
 def create_cells(tab):

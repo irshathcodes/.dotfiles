@@ -32,11 +32,16 @@ case "$event" in
         urgency="critical"   # break through Focus / Do Not Disturb
         sound="error"
         ntype="claude-permission" ;;
+      *waiting*)
+        # CC fires this ~60s after Stop as an idle nudge — redundant with the
+        # Stop notification we already sent. Skip to avoid double-pinging.
+        shopt -u nocasematch
+        exit 0 ;;
       *authentic*|*auth\ *)
         urgency="low"
         ntype="claude-auth" ;;
       *)
-        # Idle reminders, "Claude is waiting for your input", MCP elicitations.
+        # MCP elicitations and other one-off messages.
         sound="error"
         ntype="claude-notification" ;;
     esac

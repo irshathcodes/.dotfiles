@@ -1,6 +1,6 @@
 alias td='nvim ~/Documents/todos.md'
 
-alias kuat="kubectl --context arn:aws:eks:us-west-2:559076975273:cluster/ppx-uat"
+alias kuat="kubectl --context arn:aws:eks:us-west-2:559076975273:cluster/ppx-uat-05-26"
 alias ksand="kubectl --context arn:aws:eks:us-west-2:559076975273:cluster/PPX-sandbox"
 alias kprod="kubectl --context arn:aws:eks:us-west-2:559076975273:cluster/PPX-production"
 
@@ -23,7 +23,8 @@ alias ssh="kitten ssh"
 alias gcai="deno run --allow-env --allow-net --allow-read --allow-run ~/.dotfiles/git-commit.ts"
 alias la="ls -a"
 alias cw="CLAUDE_CONFIG_DIR=$HOME/.claude-w claude --dangerously-skip-permissions"
-alias cw2="CLAUDE_CONFIG_DIR=$HOME/.claude-w-2 claude --dangerously-skip-permissions"
+alias cc="claude --dangerously-skip-permissions"
 alias cm="CLAUDE_CONFIG_DIR=$HOME/.claude-p claude --dangerously-skip-permissions"
+alias tldr="TLDR_AUTO_UPDATE_DISABLED=true tldr"
 
 
