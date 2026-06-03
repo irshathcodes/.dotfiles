@@ -5,9 +5,8 @@
 #   hook.sh Stop          → turn complete, your move
 #   hook.sh Notification  → CC needs permission / input / etc.
 #
-# Uses `kitty @ kitten notify`, which routes through kitty's OSC 99 channel
-# so the notification is owned by this kitty window — clicking it focuses
-# the tab where Claude is running.
+# Uses macOS notifications directly instead of kitty's OSC 99 channel. Keeping
+# the notification outside kitty avoids stealing focus from the active split.
 
 set -uo pipefail
 
@@ -15,7 +14,7 @@ event="${1:-}"
 hook_json="$(cat 2>/dev/null || true)"
 
 urgency="normal"
-sound="system"
+sound="Glass"
 ntype="claude-$event"
 
 case "$event" in
@@ -25,46 +24,61 @@ case "$event" in
   Notification)
     body="$(printf '%s' "$hook_json" | jq -r '.message // empty' 2>/dev/null)"
     [[ -z "$body" ]] && body="needs input"
+    notification_type="$(printf '%s' "$hook_json" | jq -r '.notification_type // empty' 2>/dev/null)"
 
-    shopt -s nocasematch
-    case "$body" in
-      *permission*|*approve*|*allow*)
-        urgency="critical"   # break through Focus / Do Not Disturb
-        sound="error"
+    case "$notification_type" in
+      permission_prompt)
+        urgency="critical"
+        sound="Basso"
         ntype="claude-permission" ;;
-      *waiting*)
+      idle_prompt)
         # CC fires this ~60s after Stop as an idle nudge — redundant with the
         # Stop notification we already sent. Skip to avoid double-pinging.
-        shopt -u nocasematch
         exit 0 ;;
-      *authentic*|*auth\ *)
+      auth_success)
         urgency="low"
+        sound="Glass"
         ntype="claude-auth" ;;
-      *)
+      elicitation_dialog|elicitation_complete|elicitation_response)
         # MCP elicitations and other one-off messages.
-        sound="error"
+        sound="Basso"
         ntype="claude-notification" ;;
+      *)
+        shopt -s nocasematch
+        case "$body" in
+          *permission*|*approve*|*allow*)
+            urgency="critical"
+            sound="Basso"
+            ntype="claude-permission" ;;
+          *waiting*)
+            shopt -u nocasematch
+            exit 0 ;;
+          *authentic*|*auth\ *)
+            urgency="low"
+            sound="Glass"
+            ntype="claude-auth" ;;
+          *)
+            sound="Basso"
+            ntype="claude-notification" ;;
+        esac
+        shopt -u nocasematch
+        ;;
     esac
-    shopt -u nocasematch
     ;;
   *)
     exit 0
     ;;
 esac
 
-kitty_bin="/Applications/kitty.app/Contents/MacOS/kitty"
-sock="${KITTY_LISTEN_ON:-}"
-[[ -z "$sock" || ! -x "$kitty_bin" ]] && exit 0
-
 project="$(basename "${CLAUDE_PROJECT_DIR:-$PWD}")"
-ident="${ntype}-${project//[^a-zA-Z0-9_.-]/_}"
+title="Claude — $project"
 
-"$kitty_bin" @ --to "$sock" kitten notify \
-  --identifier "$ident" \
-  --app-name "Claude" \
-  --type "$ntype" \
-  --urgency "$urgency" \
-  --sound-name "$sound" \
-  "Claude — $project" "$body" >/dev/null 2>&1 || true
+if command -v osascript >/dev/null 2>&1; then
+  osascript \
+    -e 'on run argv' \
+    -e 'display notification (item 2 of argv) with title (item 1 of argv) sound name (item 3 of argv)' \
+    -e 'end run' \
+    "$title" "$body" "$sound" >/dev/null 2>&1 || true
+fi
 
 exit 0

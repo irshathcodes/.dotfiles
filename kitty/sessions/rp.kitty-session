@@ -4,7 +4,7 @@ cd /Users/irshath/projects/rp
 launch 'kitty-unserialize-data={"id": 1, "cmd_at_shell_startup": "nvim ."}'
 focus
 
-new_tab ai
+new_tab
 layout fat
 cd /Users/irshath/projects/rp
 launch 'kitty-unserialize-data={"id": 2}'
