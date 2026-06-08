@@ -5,6 +5,13 @@ from kitty.utils import color_as_int
 
 
 opts = get_options()
+
+# Fixed width (in cells) for every tab, including the "{index}. " prefix.
+# Forced for all tabs regardless of focus so the active tab never expands,
+# which avoids the layout shift caused by kitty's core handing leftover
+# space to the active tab in TabBar.update().
+FIXED_TAB_LENGTH = 22
+
 YELLOW_BG = as_rgb(color_as_int(opts.color11))
 BLACK = as_rgb(color_as_int(opts.color0))
 WHITE = as_rgb(color_as_int(opts.color7))
@@ -42,6 +49,9 @@ def draw_right_status(draw_data, screen, tab):
 
 
 def draw_tab(draw_data, screen, tab, before, max_title_length, index, is_last, extra_data):
+    # Ignore the per-tab max length kitty computed (it gives the active tab
+    # extra room). Force a constant width so every tab renders identically.
+    max_title_length = FIXED_TAB_LENGTH
     end = draw_tab_with_powerline(draw_data, screen, tab, before, max_title_length, index, is_last, extra_data)
 
     if(is_last):
