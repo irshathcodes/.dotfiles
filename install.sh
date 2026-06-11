@@ -40,6 +40,13 @@ symlink "kitty"         "$HOME/.config/kitty"
 echo "==> karabiner"
 symlink "karabiner-elements.json" "$HOME/.config/karabiner/karabiner.json"
 
+echo "==> neovim"
+symlink "init.lua"       "$HOME/.config/nvim/init.lua"
+symlink "lazy-lock.json" "$HOME/.config/nvim/lazy-lock.json"
+
+echo "==> git global ignore"
+symlink "git/ignore"    "$HOME/.config/git/ignore"
+
 echo "==> pi coding agent (shareable config only; secrets/runtime stay local)"
 PI_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
 for name in settings.json mcp.json models.json extensions docs; do

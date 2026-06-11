@@ -14,6 +14,16 @@
             "image"
           ],
           "reasoning": true
+        },
+        {
+          "_launch": true,
+          "contextWindow": 131072,
+          "id": "gemma4:e4b",
+          "input": [
+            "text",
+            "image"
+          ],
+          "reasoning": true
         }
       ]
     }

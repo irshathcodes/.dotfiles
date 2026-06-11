@@ -24,8 +24,9 @@ in the way before creating a symlink.
 | `.gitconfig`              | `~/.gitconfig`                       |
 | `kitty/`                  | `~/.config/kitty`                    |
 | `karabiner-elements.json` | `~/.config/karabiner/karabiner.json` |
+| `init.lua`, `lazy-lock.json` | `~/.config/nvim/`                  |
+| `git/ignore`              | `~/.config/git/ignore` (global gitignore) |
 | `pi/agent/*`              | `~/.pi/agent/*` (see `pi/README.md`) |
-| `init.lua`, `lazy-lock.json` | Neovim config (not auto-symlinked) |
 
 ## Secrets
 

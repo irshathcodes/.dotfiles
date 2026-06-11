@@ -2,9 +2,9 @@
   "compaction": {
     "enabled": true
   },
-  "defaultModel": "qwen3.5:latest",
+  "defaultModel": "gemma4:e4b",
   "defaultProvider": "ollama",
-  "defaultThinkingLevel": "high",
+  "defaultThinkingLevel": "off",
   "doubleEscapeAction": "none",
   "editorPaddingX": 1,
   "enableInstallTelemetry": false,
