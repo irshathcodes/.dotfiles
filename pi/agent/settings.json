@@ -1,0 +1,38 @@
+{
+  "compaction": {
+    "enabled": true
+  },
+  "defaultModel": "qwen3.5:latest",
+  "defaultProvider": "ollama",
+  "defaultThinkingLevel": "high",
+  "doubleEscapeAction": "none",
+  "editorPaddingX": 1,
+  "enableInstallTelemetry": false,
+  "enabledModels": [
+    "anthropic/claude-opus-4-8",
+    "openai-codex/gpt-5.5"
+  ],
+  "extensions": [
+    "extensions/minimal-footer.ts",
+    "extensions/subagents-toggle.ts"
+  ],
+  "lastChangelogVersion": "0.79.1",
+  "packages": [
+    "npm:pi-mcp-adapter",
+    "npm:pi-web-access",
+    "npm:@narumitw/pi-codex-usage",
+    "npm:@gotgenes/pi-anthropic-auth",
+    {
+      "extensions": [],
+      "prompts": [],
+      "skills": [],
+      "source": "npm:pi-subagents"
+    }
+  ],
+  "quietStartup": false,
+  "steeringMode": "all",
+  "terminal": {
+    "showTerminalProgress": false
+  },
+  "treeFilterMode": "default"
+}

@@ -1,1 +1,2 @@
+# secrets — never commit (repo is public). Real values live in .env
 .env

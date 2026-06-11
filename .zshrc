@@ -30,6 +30,9 @@ setopt HIST_IGNORE_SPACE      # Don't record entries starting with a space
 
 [[ -f ~/.zsh_aliases ]] && source ~/.zsh_aliases
 
+# dotfiles secrets (gitignored) — used by tools like pi's mcp.json ${VAR} interpolation
+[[ -f ~/.dotfiles/.env ]] && source ~/.dotfiles/.env
+
 # Enable vi mode in zsh
 # bindkey -v
 # export KEYTIMEOUT=1
@@ -44,7 +47,6 @@ export NVM_DIR="$HOME/.nvm"
 
 # Set up fzf key bindings and fuzzy completion
 source <(fzf --zsh)
-source ~/.dotfiles/fzf-commands.sh
 
 # Custom FZF keybindings (excludes handled by ~/.fdignore)
 
