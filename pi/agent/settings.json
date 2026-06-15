@@ -2,9 +2,9 @@
   "compaction": {
     "enabled": true
   },
-  "defaultModel": "gemma4:e4b",
-  "defaultProvider": "ollama",
-  "defaultThinkingLevel": "off",
+  "defaultModel": "claude-opus-4-8",
+  "defaultProvider": "anthropic",
+  "defaultThinkingLevel": "xhigh",
   "doubleEscapeAction": "none",
   "editorPaddingX": 1,
   "enableInstallTelemetry": false,
@@ -22,12 +22,7 @@
     "npm:pi-web-access",
     "npm:@narumitw/pi-codex-usage",
     "npm:@gotgenes/pi-anthropic-auth",
-    {
-      "extensions": [],
-      "prompts": [],
-      "skills": [],
-      "source": "npm:pi-subagents"
-    }
+    "npm:pi-subagents"
   ],
   "quietStartup": false,
   "steeringMode": "all",

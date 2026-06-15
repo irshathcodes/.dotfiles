@@ -2,5 +2,5 @@ new_tab
 layout fat
 cd ~
 
-launch 'kitty-unserialize-data={"id": 1, "cmd_at_shell_startup": ""}'
+launch 'kitty-unserialize-data={"id": 1}'
 focus

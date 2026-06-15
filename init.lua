@@ -377,10 +377,10 @@ require("lazy").setup({
 
 			signature = { enabled = true },
 
-			-- Default list of enabled providers defined so that you can extend it
-			-- elsewhere in your config, without redefining it, due to `opts_extend`
+			-- Completion sources. Keep LSP/path, but disable the buffer source so
+			-- random words from the current file are not suggested.
 			sources = {
-				default = { "lsp", "path", "buffer" },
+				default = { "lsp", "path" },
 			},
 
 			-- (Default) Rust fuzzy matcher for typo resistance and significantly better performance
