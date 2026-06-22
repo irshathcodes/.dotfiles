@@ -19,7 +19,7 @@ cd /Users/irshath/work/spend-management-nestjs
 launch 'kitty-unserialize-data={"id": 3}'
 focus
 
-new_tab
+new_tab claude
 layout fat
 cd /Users/irshath/work/spend-management-nestjs
 

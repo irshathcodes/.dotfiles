@@ -40,6 +40,9 @@ symlink "kitty"         "$HOME/.config/kitty"
 echo "==> karabiner"
 symlink "karabiner-elements.json" "$HOME/.config/karabiner/karabiner.json"
 
+echo "==> claude code hooks (settings.json stays hand-managed; it holds local keys)"
+symlink "claude/hooks/agent-panel-state.py" "$HOME/.claude/hooks/agent-panel-state.py"
+
 echo "==> neovim"
 symlink "init.lua"       "$HOME/.config/nvim/init.lua"
 symlink "lazy-lock.json" "$HOME/.config/nvim/lazy-lock.json"

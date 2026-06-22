@@ -25,5 +25,7 @@ alias cw="CLAUDE_CONFIG_DIR=$HOME/.claude-w claude --dangerously-skip-permission
 alias cc="claude --dangerously-skip-permissions"
 alias cm="CLAUDE_CONFIG_DIR=$HOME/.claude-p claude --dangerously-skip-permissions"
 alias tldr="TLDR_AUTO_UPDATE_DISABLED=true tldr"
+alias nosleep="sudo pmset -a disablesleep 1"
+alias rsleep="sudo pmset -a disablesleep 0"
 
 
