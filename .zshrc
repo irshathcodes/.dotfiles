@@ -4,11 +4,25 @@ if [[ ":$FPATH:" != *":/Users/irshath/.zsh/completions:"* ]]; then export FPATH=
 export CLICOLOR=1
 export LSCOLORS=ExFxBxDxCxegedabagacad
 
-# Git branch in prompt
-autoload -Uz vcs_info
-precmd() { vcs_info }
-zstyle ':vcs_info:git:*' formats ' (%b)'
-zstyle ':vcs_info:*' enable git
+# Git branch in prompt — read .git/HEAD directly (~0.05ms, no subprocess).
+# Replaces vcs_info, which forked several git processes on every prompt (~20ms).
+# Sets vcs_info_msg_0_ so the existing PS1 keeps working unchanged.
+git_prompt_info() {
+  local gitdir ref d=$PWD
+  while [[ -n $d ]]; do
+    if [[ -d $d/.git ]]; then gitdir=$d/.git; break
+    elif [[ -f $d/.git ]]; then               # worktree / submodule
+      gitdir=${$(<$d/.git)#gitdir: }; [[ $gitdir != /* ]] && gitdir=$d/$gitdir; break
+    fi
+    d=${d%/*}
+  done
+  if [[ -z $gitdir ]] || ! read -r ref < $gitdir/HEAD 2>/dev/null; then
+    vcs_info_msg_0_=""; return
+  fi
+  if [[ $ref == ref:* ]]; then vcs_info_msg_0_=" (${ref##*/})"
+  else vcs_info_msg_0_=" (${ref[1,7]})"; fi   # detached HEAD: short sha
+}
+precmd() { git_prompt_info }
 setopt PROMPT_SUBST
 
 export PS1="%B%F{blue}%~%f%b%F{yellow}\${vcs_info_msg_0_}%f "
@@ -53,6 +67,12 @@ nvm() {
   nvm "$@"
 }
 
+
+# Point fzf at fd instead of its `find` fallback: ~100x faster file walks and it
+# respects .gitignore/.fdignore (so no node_modules/.git noise). Affects Ctrl-T,
+# bare `fzf`, and the `fe` function below.
+export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 
 # Set up fzf key bindings and fuzzy completion
 source <(fzf --zsh)
@@ -189,6 +209,10 @@ export PATH="$PATH:/Users/irshath/.lmstudio/bin"
 export PATH="$HOME/.local/bin:$PATH"
 
 # Zsh autosuggestions
+# Reduce per-keystroke cost: don't re-bind widgets on every keypress, and run the
+# 50k-entry history lookup asynchronously off the keystroke path.
+ZSH_AUTOSUGGEST_MANUAL_REBIND=1
+ZSH_AUTOSUGGEST_USE_ASYNC=1
 source $HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 bindkey '^Y' autosuggest-accept
 

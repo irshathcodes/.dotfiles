@@ -542,6 +542,9 @@ require("lazy").setup({
 		"folke/snacks.nvim",
 		---@type snacks.Config
 		opts = {
+			-- Disable treesitter/LSP/syntax on files >1.5MB so big generated files
+			-- (minified bundles, GraphQL schemas, logs) open instantly instead of freezing.
+			bigfile = { enabled = true },
 			picker = {
 				sources = {
 					explorer = {
