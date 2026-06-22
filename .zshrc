@@ -39,10 +39,19 @@ setopt HIST_IGNORE_SPACE      # Don't record entries starting with a space
 
 
 
-# nvm stuff
+# nvm — lazy loaded. The default version's bin is put on PATH instantly (~0ms);
+# the full `nvm` command sources nvm.sh only on first invocation (~230ms, paid once,
+# on demand). Previously nvm_auto ran on every shell start and cost ~half of startup.
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+if [ -r "$NVM_DIR/alias/default" ]; then
+  export PATH="$NVM_DIR/versions/node/$(cat "$NVM_DIR/alias/default")/bin:$PATH"
+fi
+nvm() {
+  unset -f nvm
+  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+  [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # nvm bash_completion
+  nvm "$@"
+}
 
 
 # Set up fzf key bindings and fuzzy completion
@@ -160,8 +169,14 @@ esac
 
 export PATH="$PATH:/$HOME/.dotfiles/scripts"
 
-# bun completions
-[ -s "/Users/irshath/.bun/_bun" ] && source "/Users/irshath/.bun/_bun"
+# Completions: initialize zsh's completion system once, fast. (This used to load only as
+# a side effect of bun's completion script, which has been removed.) -C reuses the cached
+# ~/.zcompdump and skips the slow per-file security audit; the dump is rebuilt at most
+# once a day so completions for newly installed tools still get picked up.
+autoload -Uz compinit
+_zdump_stale=( ${ZDOTDIR:-$HOME}/.zcompdump(N.mh+24) )
+if (( $#_zdump_stale )); then compinit; else compinit -C; fi
+unset _zdump_stale
 
 # bun
 export BUN_INSTALL="$HOME/.bun"
@@ -182,13 +197,25 @@ bindkey '^Y' autosuggest-accept
 
 export PYENV_ROOT="$HOME/.pyenv"
 [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init - bash)"
+# pyenv — lazy loaded. The shims dir on PATH is what makes `python`/`pip` resolve to your
+# pyenv version (3.13.0) instead of macOS's old system python (3.9.6) — so it stays
+# instant. The expensive `pyenv init` (which runs `pyenv rehash`, ~70ms, on every startup)
+# is deferred to the first actual `pyenv` command. Run `pyenv rehash` yourself after
+# installing a tool/version that adds new executables.
+export PATH="$PYENV_ROOT/shims:$PATH"
+export PYENV_SHELL=zsh
+pyenv() {
+  unset -f pyenv
+  eval "$(command pyenv init - zsh)"
+  pyenv "$@"
+}
 
 
-# Load pyenv-virtualenv automatically by adding
-# the following to ~/.bashrc:
-
-eval "$(pyenv virtualenv-init -)"
+# pyenv-virtualenv: skip the ~25ms `eval "$(pyenv virtualenv-init -)"` subprocess and
+# just put its shims on PATH directly. This omits the auto-activation precmd hook (which
+# wasn't functioning under the previous bash-mode init anyway). If you later want
+# virtualenvs to auto-activate on cd, restore: eval "$(pyenv virtualenv-init -)"
+export PATH="$PYENV_ROOT/plugins/pyenv-virtualenv/shims:$PATH"
 export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"
 
 export PATH="$HOME/.local/bin:$PATH"
