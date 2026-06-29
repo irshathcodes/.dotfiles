@@ -1,6 +1,3 @@
-# Add deno completions to search path
-if [[ ":$FPATH:" != *":/Users/irshath/.zsh/completions:"* ]]; then export FPATH="/Users/irshath/.zsh/completions:$FPATH"; fi
-
 export CLICOLOR=1
 export LSCOLORS=ExFxBxDxCxegedabagacad
 
@@ -150,7 +147,7 @@ gcb() {
 
 # Fuzzy search and open any file on neovim
 fe() {
-  IFS=$'\n' files=($(fzf --query="$1" --multi --select-1 --exit-0 --preview="bat --color=always {}"))
+  IFS=$'\n' files=($(fzf --query="$1" --multi --select-1 --exit-0 --preview="cat {}"))
   [[ -n "$files" ]] && ${EDITOR:-nvim} "${files[@]}"
 }
 
@@ -176,8 +173,6 @@ fe() {
     rm -rf "$tmp"
   }
 
-#
-. "/Users/irshath/.deno/env"
 # pnpm
 export PNPM_HOME="/Users/irshath/Library/pnpm"
 case ":$PATH:" in
@@ -189,22 +184,13 @@ esac
 
 export PATH="$PATH:/$HOME/.dotfiles/scripts"
 
-# Completions: initialize zsh's completion system once, fast. (This used to load only as
-# a side effect of bun's completion script, which has been removed.) -C reuses the cached
+# Completions: initialize zsh's completion system once, fast. -C reuses the cached
 # ~/.zcompdump and skips the slow per-file security audit; the dump is rebuilt at most
 # once a day so completions for newly installed tools still get picked up.
 autoload -Uz compinit
 _zdump_stale=( ${ZDOTDIR:-$HOME}/.zcompdump(N.mh+24) )
 if (( $#_zdump_stale )); then compinit; else compinit -C; fi
 unset _zdump_stale
-
-# bun
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
-
-# Added by LM Studio CLI (lms)
-export PATH="$PATH:/Users/irshath/.lmstudio/bin"
-# End of LM Studio CLI section
 
 export PATH="$HOME/.local/bin:$PATH"
 
@@ -240,9 +226,5 @@ pyenv() {
 # wasn't functioning under the previous bash-mode init anyway). If you later want
 # virtualenvs to auto-activate on cd, restore: eval "$(pyenv virtualenv-init -)"
 export PATH="$PYENV_ROOT/plugins/pyenv-virtualenv/shims:$PATH"
-export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"
 
 export PATH="$HOME/.local/bin:$PATH"
-
-# opencode
-export PATH=/Users/irshath/.opencode/bin:$PATH

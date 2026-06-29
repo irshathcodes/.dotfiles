@@ -1,0 +1,15 @@
+[user]
+	name = Irshath
+	email = irshathv2@gmail.com
+[init]
+	defaultBranch = main
+[color]
+	ui = auto
+[core]
+	editor = nvim
+[push]
+	autoSetupRemote = true
+[pull]
+	rebase = false
+[rerere]
+	enabled = true

@@ -1,0 +1,81 @@
+# Remote Linux dev-box zsh config. Lean: dev workflow only, no macOS cruft.
+
+# ---------------------------------------------------------------- PATH (early)
+# ~/.local/bin holds our shims: fd (->fdfind), fzf + nvim (upstream), npm globals.
+# Must come before the tool setup below so `fzf`, `nvim` etc. resolve.
+export PATH="$HOME/.local/bin:$PATH"
+
+# nvm — put the default node's bin on PATH instantly (~0ms); load full nvm lazily.
+export NVM_DIR="$HOME/.nvm"
+if [ -r "$NVM_DIR/alias/default" ]; then
+  export PATH="$NVM_DIR/versions/node/$(cat "$NVM_DIR/alias/default")/bin:$PATH"
+fi
+nvm() { unset -f nvm; [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"; nvm "$@"; }
+
+# pnpm
+export PNPM_HOME="$HOME/.local/share/pnpm"
+case ":$PATH:" in *":$PNPM_HOME:"*) ;; *) export PATH="$PNPM_HOME:$PATH" ;; esac
+
+# ---------------------------------------------------------------- shell basics
+export EDITOR="nvim"
+bindkey -e  # emacs keybindings (EDITOR=nvim would otherwise auto-enable vi mode)
+
+command -v dircolors >/dev/null && eval "$(dircolors -b)"   # GNU ls colors
+alias ls='ls --color=auto'
+
+# Git branch in prompt — read .git/HEAD directly (fast, no subprocess).
+git_prompt_info() {
+  local gitdir ref d=$PWD
+  while [[ -n $d ]]; do
+    if [[ -d $d/.git ]]; then gitdir=$d/.git; break
+    elif [[ -f $d/.git ]]; then               # worktree / submodule
+      gitdir=${$(<$d/.git)#gitdir: }; [[ $gitdir != /* ]] && gitdir=$d/$gitdir; break
+    fi
+    d=${d%/*}
+  done
+  if [[ -z $gitdir ]] || ! read -r ref < $gitdir/HEAD 2>/dev/null; then
+    vcs_info_msg_0_=""; return
+  fi
+  if [[ $ref == ref:* ]]; then vcs_info_msg_0_=" (${ref##*/})"
+  else vcs_info_msg_0_=" (${ref[1,7]})"; fi   # detached HEAD: short sha
+}
+precmd() { git_prompt_info }
+setopt PROMPT_SUBST
+export PS1="%B%F{blue}%~%f%b%F{yellow}\${vcs_info_msg_0_}%f "
+
+# History
+HISTFILE=~/.zsh_history
+HISTSIZE=50000
+SAVEHIST=50000
+setopt INC_APPEND_HISTORY HIST_SAVE_BY_COPY HIST_EXPIRE_DUPS_FIRST \
+       HIST_IGNORE_DUPS HIST_FIND_NO_DUPS HIST_IGNORE_SPACE
+
+[[ -f ~/.zsh_aliases ]] && source ~/.zsh_aliases
+[[ -f ~/.dotfiles/.env ]] && source ~/.dotfiles/.env   # gitignored secrets
+
+# ---------------------------------------------------------------- fzf
+# fd backend for fzf: fast, respects .gitignore/.fdignore. Affects Ctrl-T and bare fzf.
+export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+command -v fzf >/dev/null && source <(fzf --zsh)   # Ctrl-R history, Ctrl-T files
+
+# Switch between local git branches
+gcb() {
+  local branches branch
+  branches=$(git --no-pager branch -vv) &&
+  branch=$(echo "$branches" | fzf +m) &&
+  git checkout $(echo "$branch" | awk '{print $1}' | sed "s/.* //")
+}
+
+# ---------------------------------------------------------------- completions
+ZSH_AUTOSUGGEST_MANUAL_REBIND=1
+ZSH_AUTOSUGGEST_USE_ASYNC=1
+[[ -r /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]] && \
+  source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+bindkey '^Y' autosuggest-accept
+
+# Initialize completions once, fast: -C reuses the cached dump, rebuilt at most daily.
+autoload -Uz compinit
+_zdump_stale=( ${ZDOTDIR:-$HOME}/.zcompdump(N.mh+24) )
+if (( $#_zdump_stale )); then compinit; else compinit -C; fi
+unset _zdump_stale

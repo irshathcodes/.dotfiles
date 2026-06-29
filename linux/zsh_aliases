@@ -1,0 +1,26 @@
+alias td='nvim ~/Documents/todos.md'
+
+alias kuat="kubectl --context arn:aws:eks:us-west-2:559076975273:cluster/ppx-uat-05-26"
+alias ksand="kubectl --context arn:aws:eks:us-west-2:559076975273:cluster/PPX-sandbox"
+alias kprod="kubectl --context arn:aws:eks:us-west-2:559076975273:cluster/PPX-production"
+
+alias gs="git status"
+alias ga="fgf"
+alias gc="git commit"
+alias gcm="git commit -m"
+alias gp="git push"
+alias gpl="git pull"
+alias gfo="git fetch origin"
+alias gco="git checkout"
+alias gcob="git checkout -b"
+alias gl="git log --oneline"
+alias glg="git log --graph --oneline"
+alias glog="git log --graph --pretty=format:'%C(yellow)%h%C(reset) - %C(cyan)%an%C(reset), %C(green)%ar%C(reset) : %s'"
+alias ghpa="gh pr review --approve"
+
+alias la="ls -a"
+
+# Claude Code — three config profiles
+alias cc="claude --dangerously-skip-permissions"
+alias cw="CLAUDE_CONFIG_DIR=$HOME/.claude-w claude --dangerously-skip-permissions"
+alias cm="CLAUDE_CONFIG_DIR=$HOME/.claude-p claude --dangerously-skip-permissions"
