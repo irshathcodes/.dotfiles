@@ -22,7 +22,7 @@ NVIM_VERSION="v0.11.7"   # stay on 0.11.x; do NOT auto-upgrade to 0.12
 FZF_VERSION="0.73.1"     # need >= 0.48 for `fzf --zsh` (apt ships 0.44)
 NVM_VERSION="v0.40.5"    # includes CVE-2026-10796 fix
 NODE_VERSION="24"
-PNPM_VERSION="10"        # latest 10.x, installed via npm
+PNPM_VERSION="10"        # pinned to 10.x deliberately (v11 exists); via npm
 
 export DEBIAN_FRONTEND=noninteractive
 mkdir -p "$HOME/.local/bin"
@@ -42,7 +42,7 @@ log "apt: base + cli tools"
 sudo apt-get update -y
 sudo apt-get install -y \
   zsh git curl wget unzip ca-certificates build-essential \
-  ripgrep fd-find tealdeer zsh-autosuggestions
+  ripgrep fd-find tealdeer jq zsh-autosuggestions
 
 # apt names fd `fdfind` — shim it to `fd` on PATH.
 have fdfind && ln -sf "$(command -v fdfind)" "$HOME/.local/bin/fd"
@@ -166,8 +166,21 @@ set -u
 log "pnpm $PNPM_VERSION"
 npm install -g "pnpm@$PNPM_VERSION"
 
+# ---------------------------------------------------------------- rust (rustup)
+# Toolchain for the rust_analyzer + clippy setup in init.lua. Default profile
+# includes clippy + rustfmt. --no-modify-path: we add ~/.cargo/bin in zshrc.
+if [[ ! -x "$HOME/.cargo/bin/cargo" ]]; then
+  log "rust (rustup)"
+  curl --proto '=https' --tlsv1.2 -fsSL https://sh.rustup.rs | sh -s -- -y --no-modify-path --profile default
+fi
+
 # ---------------------------------------------------------------- Claude Code
-have claude || { log "Claude Code"; npm install -g @anthropic-ai/claude-code; }
+# Native installer (Anthropic's recommended method): drops the launcher at
+# ~/.local/bin/claude (already on PATH via zshrc), versioned binaries under
+# ~/.local/share/claude, and auto-updates in the background. Default channel is
+# `latest` (append `-s stable` for the ~1-week-delayed stable channel). The npm
+# package is the same binary but won't auto-update.
+[[ -x "$HOME/.local/bin/claude" ]] || { log "Claude Code (native installer)"; curl -fsSL https://claude.ai/install.sh | bash; }
 
 # ---------------------------------------------------------------- link config
 log "linking config"
@@ -179,8 +192,8 @@ ln -sf "$DOTFILES/init.lua"        "$HOME/.config/nvim/init.lua"
 ln -sf "$DOTFILES/lazy-lock.json"  "$HOME/.config/nvim/lazy-lock.json"
 ln -sf "$DOTFILES/git/ignore"      "$HOME/.config/git/ignore"
 
-# Claude config profiles (cc / cw / cm aliases)
-mkdir -p "$HOME/.claude" "$HOME/.claude-w" "$HOME/.claude-p"
+# Claude config dir
+mkdir -p "$HOME/.claude"
 
 # Secrets file (sourced by zshrc); create from template if absent.
 if [[ ! -f "$DOTFILES/.env" && -f "$DOTFILES/.env.example" ]]; then

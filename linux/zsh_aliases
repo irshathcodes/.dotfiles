@@ -5,7 +5,6 @@ alias ksand="kubectl --context arn:aws:eks:us-west-2:559076975273:cluster/PPX-sa
 alias kprod="kubectl --context arn:aws:eks:us-west-2:559076975273:cluster/PPX-production"
 
 alias gs="git status"
-alias ga="fgf"
 alias gc="git commit"
 alias gcm="git commit -m"
 alias gp="git push"
@@ -20,7 +19,5 @@ alias ghpa="gh pr review --approve"
 
 alias la="ls -a"
 
-# Claude Code — three config profiles
+# Claude Code
 alias cc="claude --dangerously-skip-permissions"
-alias cw="CLAUDE_CONFIG_DIR=$HOME/.claude-w claude --dangerously-skip-permissions"
-alias cm="CLAUDE_CONFIG_DIR=$HOME/.claude-p claude --dangerously-skip-permissions"

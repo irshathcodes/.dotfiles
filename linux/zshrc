@@ -16,6 +16,9 @@ nvm() { unset -f nvm; [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"; nvm "$@"
 export PNPM_HOME="$HOME/.local/share/pnpm"
 case ":$PATH:" in *":$PNPM_HOME:"*) ;; *) export PATH="$PNPM_HOME:$PATH" ;; esac
 
+# rust / cargo (rustup writes ~/.cargo/env even with --no-modify-path)
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+
 # ---------------------------------------------------------------- shell basics
 export EDITOR="nvim"
 bindkey -e  # emacs keybindings (EDITOR=nvim would otherwise auto-enable vi mode)

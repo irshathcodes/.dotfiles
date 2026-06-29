@@ -177,20 +177,6 @@ require("lazy").setup({
 			-- LSP progress notifications
 			require("fidget").setup({})
 
-			-- Helper: detect if a standalone file uses Deno-style npm: imports
-			local function has_npm_imports(fname)
-				local ok, lines = pcall(vim.fn.readfile, fname, "", 50)
-				if not ok then
-					return false
-				end
-				for _, line in ipairs(lines) do
-					if line:match("[\"']npm:") then
-						return true
-					end
-				end
-				return false
-			end
-
 			-- Global capabilities for every server (extended by blink.cmp)
 			vim.lsp.config("*", {
 				capabilities = require("blink.cmp").get_lsp_capabilities(),
@@ -252,24 +238,6 @@ require("lazy").setup({
 					},
 				},
 			})
-
-			vim.lsp.config("denols", {
-				cmd = { vim.fn.expand("~/.deno/bin/deno"), "lsp" },
-				workspace_required = true,
-				root_dir = function(bufnr, on_dir)
-					local fname = vim.api.nvim_buf_get_name(bufnr)
-					local root = vim.fs.root(bufnr, { "deno.json", "deno.jsonc" })
-					if root then
-						on_dir(root)
-					elseif has_npm_imports(fname) then
-						on_dir(vim.fn.fnamemodify(fname, ":h"))
-					end
-				end,
-				settings = { deno = { enable = true } },
-			})
-
-			-- denols isn't installed via Mason, so enable it explicitly
-			vim.lsp.enable("denols")
 
 			-- LSP keybindings
 			vim.api.nvim_create_autocmd("LspAttach", {

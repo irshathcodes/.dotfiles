@@ -22,9 +22,9 @@ config sources `~/.dotfiles/.env`).
 ## What it installs
 
 - **Shell:** zsh (set as default) + autosuggestions, fast git prompt, fzf, history
-- **CLI:** ripgrep, fd, fzf (pinned), neovim (pinned 0.11.x), gh, tldr (tealdeer)
+- **CLI:** ripgrep, fd, fzf (pinned), neovim (pinned 0.11.x), gh, tldr (tealdeer), jq
 - **Infra:** docker + compose, aws cli v2, kubectl
-- **Runtimes:** node 24 (nvm, lazy-loaded), pnpm 10
+- **Runtimes:** node 24 (nvm, lazy-loaded), pnpm 10, rust (rustup)
 - **Claude Code**
 
 ## Secrets
