@@ -17,6 +17,12 @@ DOTFILES="$(cd "$HERE/.." && pwd)"                      # repo root (shares init
 have() { command -v "$1" >/dev/null 2>&1; }
 log()  { printf '\n==> %s\n' "$*"; }
 
+# Preflight. This targets Debian/Ubuntu and the body leans on `sudo`. Fail fast
+# with a clear message off-distro; if we're root on a minimal image with no sudo,
+# shim it to run commands directly so every `sudo x` below still works.
+have apt-get || { echo "this bootstrap targets Debian/Ubuntu (apt-get not found)" >&2; exit 1; }
+if [[ $EUID -eq 0 ]] && ! have sudo; then sudo() { "$@"; }; fi
+
 # ---- version pins (deliberate; bump by hand) --------------------------------
 NVIM_VERSION="v0.11.7"   # stay on 0.11.x; do NOT auto-upgrade to 0.12
 FZF_VERSION="0.73.1"     # need >= 0.48 for `fzf --zsh` (apt ships 0.44)
@@ -63,11 +69,13 @@ if [[ "$("$HOME/.local/bin/fzf" --version 2>/dev/null | awk '{print $1}')" != "$
 fi
 
 # ---------------------------------------------------------------- neovim (0.11.x)
-if [[ ! -x "$HOME/.local/nvim/bin/nvim" ]]; then
+# Version-aware (like fzf) so bumping NVIM_VERSION and re-running actually upgrades.
+# `nvim --version` line 1 is e.g. "NVIM v0.11.7"; compare field 2 to the pin.
+if [[ "$("$HOME/.local/nvim/bin/nvim" --version 2>/dev/null | awk 'NR==1{print $2}')" != "$NVIM_VERSION" ]]; then
   log "neovim $NVIM_VERSION"
   tmp="$(mktemp -d)"
   curl -fL "https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-linux-${NVIM_ARCH}.tar.gz" -o "$tmp/nvim.tgz"
-  mkdir -p "$HOME/.local/nvim"
+  rm -rf "$HOME/.local/nvim"; mkdir -p "$HOME/.local/nvim"   # clean reinstall on upgrade
   tar -xzf "$tmp/nvim.tgz" -C "$HOME/.local/nvim" --strip-components=1
   rm -rf "$tmp"
 fi
@@ -253,9 +261,9 @@ EOF
     echo "  testing GitHub auth..."
     ssh_out="$(ssh -T git@github.com 2>&1 || true)"
     if printf '%s' "$ssh_out" | grep -q "successfully authenticated"; then
-      echo "  GitHub SSH OK"
+      echo "  GitHub SSH OK"; github_ssh_ok=1
     else
-      echo "  GitHub SSH not verified — add the public key to GitHub, or the key is passphrase-protected"
+      echo "  GitHub SSH not verified yet — will offer to upload the key via gh below"
     fi
   fi
 
@@ -267,14 +275,41 @@ EOF
   # kubeconfig
   paste_secret "$HOME/.kube/config" 600 "kubeconfig (~/.kube/config)"
   [[ -d "$HOME/.kube" ]] && chmod 700 "$HOME/.kube"
+
+  # GitHub CLI: log in (enables `gh` + the ghpa alias) and, if the SSH key isn't
+  # already working, upload it so you skip adding it on github.com by hand.
+  if have gh && ! gh auth status >/dev/null 2>&1; then
+    log "GitHub CLI login (interactive; Ctrl-C to skip)"
+    gh auth login || echo "  gh auth login skipped/failed — run 'gh auth login' later"
+  fi
+  if have gh && gh auth status >/dev/null 2>&1 \
+     && [[ "${github_ssh_ok:-0}" != 1 && -f "$HOME/.ssh/id_ed25519.pub" ]]; then
+    echo "  uploading SSH key to GitHub..."
+    gh ssh-key add "$HOME/.ssh/id_ed25519.pub" --title "$(hostname)" 2>/dev/null \
+      && echo "  SSH key uploaded" \
+      || echo "  SSH key not uploaded (already present, or: gh auth refresh -s admin:public_key)"
+  fi
 else
   echo "secrets restore skipped (not a terminal) — re-run interactively to paste secrets"
 fi
 
 # ---------------------------------------------------------------- default shell
-if [[ "${SHELL:-}" != *zsh ]]; then
+# Authoritative source is /etc/passwd (field 7), NOT $SHELL — $SHELL only reflects
+# the current session, not the configured login default.
+zsh_bin="$(command -v zsh)"
+if [[ "$(getent passwd "$USER" | cut -d: -f7)" != "$zsh_bin" ]]; then
   log "default shell -> zsh (may prompt for your password)"
-  chsh -s "$(command -v zsh)" "$USER" || echo "chsh failed; run manually: chsh -s \$(command -v zsh)"
+  # chsh refuses any shell not listed in /etc/shells; make sure ours is there.
+  grep -qxF "$zsh_bin" /etc/shells 2>/dev/null || echo "$zsh_bin" | sudo tee -a /etc/shells >/dev/null
+  chsh -s "$zsh_bin" "$USER" || echo "  chsh failed (non-interactive? PAM?) — set manually: chsh -s $zsh_bin"
+  # Read it back — chsh can exit 0 without the change sticking on some setups.
+  if [[ "$(getent passwd "$USER" | cut -d: -f7)" == "$zsh_bin" ]]; then
+    echo "  default login shell is now zsh (effective on next login)"
+  else
+    echo "  WARNING: default shell is still $(getent passwd "$USER" | cut -d: -f7) — run: chsh -s $zsh_bin"
+  fi
+else
+  echo "default shell already zsh"
 fi
 
 cat <<'EOF'
@@ -282,7 +317,6 @@ cat <<'EOF'
 Done. Next:
   exec zsh              # start the configured shell
   claude                # log in (auth is per-machine)
-  gh auth login         # if you didn't restore an SSH key / want gh API access
   newgrp docker         # use docker without sudo now (or just re-login over SSH)
 
 Deferred: zmx + mosh for session persistence.
