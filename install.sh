@@ -36,6 +36,16 @@ symlink ".gitconfig"    "$HOME/.gitconfig"
 
 echo "==> kitty"
 symlink "kitty"         "$HOME/.config/kitty"
+# Seed the per-project kitty session state (default layouts) if missing, so the
+# native `cmd+j <letter>` goto_session always has a file to open. Idempotent;
+# pure local file writes (no kitty/ssh needed). Live layouts auto-update after.
+# `if` (not `&&/||`) so a real failure surfaces loudly instead of being masked
+# by a trailing echo that always succeeds under `set -e`.
+if "$DOTFILES/kitty/kittymux.sh" seed-all; then
+  echo "seed: kitty session state ready"
+else
+  echo "WARNING: kittymux seed-all failed; run '~/.config/kitty/kittymux.sh seed-all' manually" >&2
+fi
 
 echo "==> karabiner"
 symlink "karabiner-elements.json" "$HOME/.config/karabiner/karabiner.json"
