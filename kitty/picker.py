@@ -6,6 +6,7 @@ import os
 import re
 import select
 import shutil
+import subprocess
 import sys
 import termios
 import time
@@ -619,9 +620,15 @@ def run_picker(mode: str, items: list[PickerItem]) -> dict[str, Any] | None:
                 item = state.selected_item()
                 action = state.delete_action()
                 if item and action:
+                    # Gather the backing zmx sessions BEFORE closing (the windows
+                    # carry the info). Close the kitty session first so each pane's
+                    # reconnect loop dies and cannot recreate the session, THEN
+                    # kill the zmx sessions on the server.
+                    zmx = zmx_sessions_for(action["name"])
                     close_session(action["name"])
+                    kill_zmx(zmx)
                     state.remove_item(item.id)
-                    status = f"Closed {action['name']}"
+                    status = f"Closed {action['name']}" + (f" (+{len(zmx)} zmx)" if zmx else "")
             elif key == "ctrl_d" and mode != "sessions":
                 item = state.selected_item()
                 action = state.delete_action()
@@ -651,6 +658,52 @@ def close_window(window_id: str) -> None:
 
 def focus_window(window_id: str) -> None:
     main.remote_control(["focus-window", "--match", f"id:{window_id}"], capture_output=True)
+
+
+REMOTE_HOST = os.environ.get("REMOTE_HOST", "moideen")
+
+
+def zmx_sessions_for(session_name: str) -> list[str]:
+    """Every cs/zmx session name backing the remote panes of a kitty session.
+
+    Read straight from live kitty state: a remote pane carries its zmx session
+    in user_vars.cs_session (set by kittymux / new_session.py); fall back to
+    parsing the `remote-attach.sh <proj> <name>` cmdline for older panes. Local
+    panes have neither, so a local session yields [] (nothing to kill).
+    """
+    try:
+        state = load_kitty_state()
+    except Exception:
+        return []
+    found: list[str] = []
+    for os_window in state:
+        for tab in os_window.get("tabs", []):
+            tab_sn = tab.get("session_name")
+            for window in tab.get("windows", []):
+                if (window.get("session_name") or tab_sn) != session_name:
+                    continue
+                cs = (window.get("user_vars") or {}).get("cs_session")
+                if not cs:
+                    cmd = window.get("cmdline") or []
+                    if (isinstance(cmd, list) and len(cmd) >= 4
+                            and isinstance(cmd[1], str) and "remote-attach" in cmd[1]):
+                        cs = f"{cmd[2]}.{cmd[3]}"
+                if cs and cs not in found:
+                    found.append(cs)
+    return found
+
+
+def kill_zmx(sessions: list[str]) -> bool:
+    """Kill the given zmx sessions on the server (zmx kill takes many names)."""
+    if not sessions:
+        return False
+    ssh = shutil.which("ssh") or "/usr/bin/ssh"
+    try:
+        subprocess.run([ssh, REMOTE_HOST, "zmx", "kill", *sessions],
+                       timeout=10, capture_output=True)
+        return True
+    except Exception:
+        return False
 
 
 def picker_main(args: list[str]) -> str:
