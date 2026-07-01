@@ -88,3 +88,23 @@ unset _zdump_stale
 # and records each cs pane's cwd so "open a new pane here" can find it. Harmless
 # in a plain shell; the cwd file is written only when CS_SESSION is set.
 [[ -f ~/.config/cs/hook.zsh ]] && source ~/.config/cs/hook.zsh
+
+# zmf — fuzzy-pick a running zmx session and attach. For mobile / Termius, where
+# there's no kitty to drive sessions and you work one window at a time (on a
+# computer, kitty's cmd+j manages zmx instead). Names-only: the session name
+# (e.g. px-ui.cc) is the identifier, and start_dir/preview are dropped (cs cd's
+# inside the launched command, so zmx's start_dir is always $HOME — useless to
+# show — and a preview is wasted on a phone). Optional arg pre-filters; a lone
+# match auto-attaches.
+zmf() {
+  local sessions session sel_opts
+  sessions=$(zmx ls --short 2>/dev/null)
+  if [[ -z "$sessions" ]]; then
+    echo "zmf: no running zmx sessions" >&2
+    return 1
+  fi
+  sel_opts=()
+  [[ -n "$1" ]] && sel_opts=(--query="$1" --select-1 --exit-0)
+  session=$(fzf --height=80% --reverse --prompt="zmx> " "${sel_opts[@]}" <<< "$sessions") || return
+  [[ -n "$session" ]] && zmx attach "$session"
+}
