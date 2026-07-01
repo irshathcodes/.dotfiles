@@ -1,0 +1,12 @@
+# .zshenv — sourced by EVERY zsh, including non-interactive/non-login shells.
+#
+# This is the load-bearing file for the remote workflow: `remote-attach.sh` runs
+# `ssh -t moideen cs …`, which is a NON-interactive shell, so it never sources
+# ~/.zshrc. Without ~/.local/bin on PATH here, `cs` and `zmx` would be
+# command-not-found and every kitty pane would fail to attach. Keep the PATH
+# line in sync with the (interactive) one in linux/zshrc.
+export PATH="$HOME/.local/bin:$PATH"
+
+# Pin zmx's socket/state dir (its default is ~/.cache/zmx anyway) so every entry
+# point — interactive shell, ssh command, cron — agrees on where sessions live.
+export ZMX_DIR="$HOME/.cache/zmx"

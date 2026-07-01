@@ -29,14 +29,15 @@ FZF_VERSION="0.73.1"     # need >= 0.48 for `fzf --zsh` (apt ships 0.44)
 NVM_VERSION="v0.40.5"    # includes CVE-2026-10796 fix
 NODE_VERSION="24"
 PNPM_VERSION="10"        # pinned to 10.x deliberately (v11 exists); via npm
+ZMX_VERSION="0.6.0"      # session-persistence multiplexer (github.com/neurosnap/zmx)
 
 export DEBIAN_FRONTEND=noninteractive
 mkdir -p "$HOME/.local/bin"
 
 # Architecture tokens differ per project, so resolve them all once.
 case "$(uname -m)" in
-  x86_64|amd64)  NVIM_ARCH=x86_64; FZF_ARCH=amd64; AWS_ARCH=x86_64  ;;
-  aarch64|arm64) NVIM_ARCH=arm64;  FZF_ARCH=arm64; AWS_ARCH=aarch64 ;;
+  x86_64|amd64)  NVIM_ARCH=x86_64; FZF_ARCH=amd64; AWS_ARCH=x86_64;  ZMX_ARCH=x86_64  ;;
+  aarch64|arm64) NVIM_ARCH=arm64;  FZF_ARCH=arm64; AWS_ARCH=aarch64; ZMX_ARCH=aarch64 ;;
   *) echo "unsupported architecture: $(uname -m)" >&2; exit 1 ;;
 esac
 
@@ -190,8 +191,28 @@ fi
 # package is the same binary but won't auto-update.
 [[ -x "$HOME/.local/bin/claude" ]] || { log "Claude Code (native installer)"; curl -fsSL https://claude.ai/install.sh | bash; }
 
+# ---------------------------------------------------------------- zmx (persistence)
+# The session-persistence layer behind "kittymux": one zmx session per pane, so
+# nvim/claude/dev-servers survive SSH disconnects and reboots (with linger, set
+# below). Release binary (single static exe) pinned to $ZMX_VERSION; the sha256
+# sidecar carries a build-cache path as its filename, so we compare field 1 by
+# hand rather than feeding it to `sha256sum --check`.
+if [[ "$("$HOME/.local/bin/zmx" version 2>/dev/null | awk 'NR==1{print $2}')" != "$ZMX_VERSION" ]]; then
+  log "zmx $ZMX_VERSION"
+  tmp="$(mktemp -d)"
+  base="https://github.com/neurosnap/zmx/releases/download/v${ZMX_VERSION}/zmx-${ZMX_VERSION}-linux-${ZMX_ARCH}.tar.gz"
+  curl -fL -o "$tmp/zmx.tgz"    "$base"
+  curl -fL -o "$tmp/zmx.sha256" "$base.sha256"
+  echo "$(awk '{print $1}' "$tmp/zmx.sha256")  $tmp/zmx.tgz" | sha256sum --check --status \
+    || { echo "zmx checksum FAILED" >&2; exit 1; }
+  tar -xzf "$tmp/zmx.tgz" -C "$HOME/.local/bin"   # extracts a bare `zmx` binary
+  chmod +x "$HOME/.local/bin/zmx"
+  rm -rf "$tmp"
+fi
+
 # ---------------------------------------------------------------- link config
 log "linking config"
+ln -sf "$HERE/zshenv"              "$HOME/.zshenv"   # PATH for non-interactive ssh (cs/zmx)
 ln -sf "$HERE/zshrc"               "$HOME/.zshrc"
 ln -sf "$HERE/zsh_aliases"         "$HOME/.zsh_aliases"
 ln -sf "$HERE/gitconfig"           "$HOME/.gitconfig"
@@ -199,6 +220,14 @@ mkdir -p "$HOME/.config/nvim" "$HOME/.config/git"
 ln -sf "$DOTFILES/init.lua"        "$HOME/.config/nvim/init.lua"
 ln -sf "$DOTFILES/lazy-lock.json"  "$HOME/.config/nvim/lazy-lock.json"
 ln -sf "$DOTFILES/git/ignore"      "$HOME/.config/git/ignore"
+
+# cs / kittymux session layer: the `cs` resolver on PATH, its zsh prompt hook
+# (sourced by zshrc), and the project registry. The registry is edited in-repo
+# and shared across machines; cs tolerates entries whose dir doesn't exist here.
+ln -sf "$HERE/cs/cs"        "$HOME/.local/bin/cs"
+mkdir -p "$HOME/.config/cs"
+ln -sf "$HERE/cs/hook.zsh"  "$HOME/.config/cs/hook.zsh"
+ln -sf "$HERE/cs/projects"  "$HOME/.config/cs/projects"
 
 # Claude config dir
 mkdir -p "$HOME/.claude"
@@ -312,6 +341,50 @@ else
   echo "default shell already zsh"
 fi
 
+# ---------------------------------------------------------------- sshd MaxSessions
+# Each kitty pane opens its own channel on ONE multiplexed SSH connection; sshd
+# caps channels per connection at MaxSessions (default 10). A kittymux window
+# runs well past that, so raise it. Drop-in file (survives sshd upgrades). Only
+# reloads sshd when the value actually changes, and only if we can sudo.
+SSHD_DROPIN=/etc/ssh/sshd_config.d/99-kittymux.conf
+if [[ "$(cat "$SSHD_DROPIN" 2>/dev/null)" != "MaxSessions 100" ]]; then
+  log "sshd MaxSessions 100 (for many kitty panes per connection)"
+  sudo mkdir -p "$(dirname "$SSHD_DROPIN")"   # present + Include-d by default on Ubuntu; harmless if so
+  if echo "MaxSessions 100" | sudo tee "$SSHD_DROPIN" >/dev/null 2>&1; then
+    # Apply to the running daemon: validate the full config first, then reload
+    # (fall back to restart; try both unit names since distros differ). Existing
+    # connections keep their old limit until dropped — the next fresh one adopts
+    # it. The success message is gated on the reload actually succeeding, so we
+    # never claim "effective" when the daemon never picked up the change.
+    if sudo sshd -t 2>/dev/null && { sudo systemctl reload ssh 2>/dev/null \
+        || sudo systemctl reload sshd 2>/dev/null \
+        || sudo systemctl restart ssh 2>/dev/null \
+        || sudo systemctl restart sshd 2>/dev/null; }; then
+      echo "  wrote $SSHD_DROPIN and reloaded sshd (effective for new connections)"
+    else
+      echo "  WARNING: wrote $SSHD_DROPIN but could NOT reload sshd — apply by hand:" >&2
+      echo "           sudo sshd -t && sudo systemctl reload ssh   (or reboot)" >&2
+    fi
+  else
+    echo "  WARNING: could not write $SSHD_DROPIN (need sudo) — set MaxSessions 100 by hand" >&2
+  fi
+else
+  echo "sshd MaxSessions already 100"
+fi
+
+# ---------------------------------------------------------------- linger
+# Without linger, systemd tears down the user's session (and any zmx sessions)
+# once the last login closes. Enabling it lets zmx sessions survive full logout
+# and reboots — the whole point of the persistence layer.
+if [[ "$(loginctl show-user "$USER" 2>/dev/null | sed -n 's/^Linger=//p')" != "yes" ]]; then
+  log "enable-linger (zmx sessions survive logout/reboot)"
+  sudo loginctl enable-linger "$USER" 2>/dev/null \
+    && echo "  linger enabled for $USER" \
+    || echo "  WARNING: could not enable linger (need sudo) — run: sudo loginctl enable-linger $USER" >&2
+else
+  echo "linger already enabled"
+fi
+
 cat <<'EOF'
 
 Done. Next:
@@ -319,5 +392,7 @@ Done. Next:
   claude                # log in (auth is per-machine)
   newgrp docker         # use docker without sudo now (or just re-login over SSH)
 
-Deferred: zmx + mosh for session persistence.
+Session persistence (zmx) is set up: `cs <project>` attaches a persistent
+session; from the Mac, kitty's cmd+j drives it. Edit projects in
+linux/cs/projects.
 EOF

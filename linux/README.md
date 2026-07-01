@@ -26,6 +26,9 @@ config sources `~/.dotfiles/.env`).
 - **Infra:** docker + compose, aws cli v2, kubectl
 - **Runtimes:** node 24 (nvm, lazy-loaded), pnpm 10, rust (rustup)
 - **Claude Code**
+- **Session persistence:** `zmx` (pinned) + the `cs` resolver, so nvim/claude/
+  dev-servers survive SSH drops and reboots. Also raises sshd `MaxSessions` (many
+  kitty panes share one connection) and enables linger (both need sudo).
 
 ## Secrets
 
@@ -45,15 +48,16 @@ to replace them. Docker access without sudo needs one re-login after the first r
 
 | Source (in repo)             | Linked to              |
 |------------------------------|------------------------|
+| `linux/zshenv`               | `~/.zshenv`            |
 | `linux/zshrc`                | `~/.zshrc`             |
 | `linux/zsh_aliases`          | `~/.zsh_aliases`       |
 | `linux/gitconfig`            | `~/.gitconfig`         |
 | `init.lua`, `lazy-lock.json` | `~/.config/nvim/`      |
 | `git/ignore`                 | `~/.config/git/ignore` |
+| `linux/cs/cs`                | `~/.local/bin/cs`      |
+| `linux/cs/hook.zsh`          | `~/.config/cs/hook.zsh` |
+| `linux/cs/projects`          | `~/.config/cs/projects` |
 
 The neovim config (`init.lua`) is shared with the macOS setup at the repo root.
-
-## Deferred
-
-Session persistence (zmx + mosh) so SSH disconnects don't kill your work — added
-next.
+The `cs` project registry (`linux/cs/projects`) is shared across machines and
+edited in-repo; `cs` tolerates a project whose directory doesn't exist locally.

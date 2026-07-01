@@ -1,0 +1,93 @@
+#!/bin/sh
+# cs - "code session": attach (creating if needed) a persistent zmx session
+# for a project, on this server. One zmx session per (project, name); the
+# terminal/window manager (kitty on the Mac, Termius on the phone) provides
+# the panes. Reattaching restores whatever was running (nvim, claude, server).
+#
+#   usage: cs <project> [name] [dir]      (default name: sh)
+#          cs                              (list known projects)
+#
+#   name : edit -> nvim .,  cc -> claude,  anything else -> plain shell.
+#          ad-hoc panes pass their own unique name (e.g. sh-2, log, test).
+#   dir  : optional start dir override. Two uses: "open a new pane in the dir
+#          I split from" for a registered project, AND an ad-hoc session for a
+#          project NOT in the registry (an arbitrary path, or a free-flow
+#          session that passes ~ = home). Honored only if it exists.
+#
+# Registry: ~/.config/cs/projects  ->  lines of "<project> <absolute-dir>"
+#
+# TERM is pinned to xterm-256color (NOT xterm-kitty): zmx is a ghostty VT, and
+# xterm-kitty makes TUIs enable the kitty keyboard protocol, which zmx
+# mishandles on reattach (documented known issue) -> corrupted/garbled display.
+# xterm-256color avoids that; COLORTERM=truecolor restores full 24-bit color.
+set -eu
+
+REG="${CS_REGISTRY:-$HOME/.config/cs/projects}"
+ZMX="${ZMX:-zmx}"
+
+list_projects() {
+  [ -f "$REG" ] && awk 'NF && $1 !~ /^#/ { print "  " $1 }' "$REG"
+}
+
+proj="${1:-}"
+name="${2:-sh}"
+dir_override="${3:-}"
+
+if [ -z "$proj" ]; then
+  echo "usage: cs <project> [name] [dir]" >&2
+  echo "projects:" >&2
+  list_projects >&2
+  exit 2
+fi
+
+# resolve project dir from registry (whitespace-separated: "<name> <dir>")
+dir=$(awk -v p="$proj" 'NF && $1 !~ /^#/ && $1 == p { $1=""; sub(/^[ \t]+/, ""); print; exit }' "$REG" 2>/dev/null || true)
+[ -n "$dir" ] && case "$dir" in "~"/*|"~") dir="$HOME${dir#\~}" ;; esac
+
+# optional explicit start dir (tilde-expanded here, server-side). Honored only
+# if it exists, so a stale path can't strand the pane. For an UNREGISTERED
+# project this is what supplies the dir: an ad-hoc project path, or ~ (= home)
+# for a free-flow session.
+if [ -n "$dir_override" ]; then
+  case "$dir_override" in "~"/*|"~") dir_override="$HOME${dir_override#\~}" ;; esac
+  [ -d "$dir_override" ] && dir="$dir_override"
+fi
+
+# Unregistered project is allowed ONLY when an existing dir was supplied above.
+# Without one it is almost certainly a typo, so keep erroring (this preserves
+# the old "unknown project" guard for the registered-project code paths).
+if [ -z "$dir" ]; then
+  echo "cs: unknown project '$proj' (pass an existing dir for an ad-hoc session)" >&2
+  echo "known projects:" >&2
+  list_projects >&2
+  exit 1
+fi
+
+session="$proj.$name"
+
+# per-name startup, applied ONLY when the session is first created
+case "$name" in
+  edit) startup="nvim ." ;;   # editor
+  cc)   startup="claude" ;;   # claude code
+  *)    startup="" ;;         # srv, sh, and all ad-hoc panes: plain shell
+esac
+
+# Env baked into the shell on first creation. CS_SESSION/CS_PROJECT let the
+# prompt hook (~/.config/cs/hook.zsh) record this pane's cwd to
+# ~/.cache/cs/cwd/<session>, so "open a new pane here" can find the dir.
+prelude="export TERM=xterm-256color COLORTERM=truecolor CS_SESSION='$session' CS_PROJECT='$proj'"
+
+if [ -n "$startup" ]; then
+  create="$prelude; cd \"$dir\"; $startup; exec zsh -li"
+else
+  create="$prelude; cd \"$dir\"; exec zsh -li"
+fi
+
+# Reattach if the session already exists; otherwise create it with the
+# name's startup command. Checking first makes behavior deterministic
+# regardless of how zmx treats a command passed to an existing session.
+if "$ZMX" ls --short 2>/dev/null | grep -qxF "$session"; then
+  exec "$ZMX" attach "$session"
+else
+  exec "$ZMX" attach "$session" zsh -lic "$create"
+fi

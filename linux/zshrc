@@ -82,3 +82,9 @@ autoload -Uz compinit
 _zdump_stale=( ${ZDOTDIR:-$HOME}/.zcompdump(N.mh+24) )
 if (( $#_zdump_stale )); then compinit; else compinit -C; fi
 unset _zdump_stale
+
+# ---------------------------------------------------------------- cs / kittymux
+# Prompt hook for `cs` panes: sets the terminal title (command running / cwd)
+# and records each cs pane's cwd so "open a new pane here" can find it. Harmless
+# in a plain shell; the cwd file is written only when CS_SESSION is set.
+[[ -f ~/.config/cs/hook.zsh ]] && source ~/.config/cs/hook.zsh

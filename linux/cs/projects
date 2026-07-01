@@ -1,0 +1,7 @@
+# <project>  <absolute-dir>
+frontend  ~/work/frontend
+px-ui  ~/work/px-ui
+spend-management-service  ~/work/spend-management-service
+candidate-app  ~/work/candidate-app
+gql  ~/work/gql
+buildkit  ~/projects/buildkit
