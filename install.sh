@@ -47,6 +47,26 @@ else
   echo "WARNING: kittymux seed-all failed; run '~/.config/kitty/kittymux.sh seed-all' manually" >&2
 fi
 
+echo "==> moideen dev-server tunnel (launchd)"
+# A single persistent background SSH tunnel forwarding remote dev-server ports
+# to this Mac (see tunnel/tunnel.sh). launchd auto-starts it at login and
+# restarts it if the process dies. The plist needs an absolute path to the
+# script (launchd does NOT expand ~), so we render it from a template.
+symlink "tunnel" "$HOME/.config/tunnel"
+TUNNEL_LABEL="com.irshath.moideen-tunnel"
+TUNNEL_PLIST="$HOME/Library/LaunchAgents/$TUNNEL_LABEL.plist"
+mkdir -p "$HOME/Library/LaunchAgents"
+sed "s|__TUNNEL_SH__|$HOME/.config/tunnel/tunnel.sh|g" \
+  "$DOTFILES/tunnel/$TUNNEL_LABEL.plist.template" > "$TUNNEL_PLIST"
+# Reload cleanly: bootout any old instance (ignore "not loaded") then bootstrap.
+launchctl bootout "gui/$(id -u)/$TUNNEL_LABEL" 2>/dev/null || true
+if launchctl bootstrap "gui/$(id -u)" "$TUNNEL_PLIST" 2>/dev/null; then
+  echo "tunnel: launchd agent loaded (log: /tmp/moideen-tunnel.log)"
+else
+  echo "WARNING: launchctl bootstrap failed; load manually with:" >&2
+  echo "  launchctl bootstrap gui/\$(id -u) $TUNNEL_PLIST" >&2
+fi
+
 echo "==> karabiner"
 symlink "karabiner-elements.json" "$HOME/.config/karabiner/karabiner.json"
 

@@ -43,7 +43,9 @@ STATE_DIR="$HOME/.local/state/kittymux"
 
 # Projects that get a seeded default layout. Add a name here when you wire up a
 # new cmd+j <letter>. (The cmd+j keys open these via native goto_session.)
-PROJECTS="px-ui"
+# Names must match the remote cs registry (~/.config/cs/projects on the server)
+# and the goto_session filenames in kitty.conf. Order mirrors cmd+j p/f/n/c/g/b.
+PROJECTS="px-ui frontend spend-management-service candidate-app gql buildkit"
 
 sessfile() { echo "$STATE_DIR/$1.kitty-session"; }
 
@@ -163,6 +165,27 @@ save_project() {
   fi
 }
 
+# After a tab is destroyed, every project session shares ONE os-window, so kitty
+# focuses the most-recently-active tab across ALL sessions - which can drop you
+# into a different project. This focuses the most-recent remaining tab of the
+# SAME session ($1) instead. Call it BEFORE the close (we move focus onto the
+# sibling, then close the target by id) so there is no visible jump/flicker.
+# No-op when the session has no other tab (then kitty's fallback is fine). Uses
+# the pre-action snapshot $ls_json; $2 is the id of the tab being closed.
+refocus_session() {
+  _rp="$1"; _closing="$2"
+  [ -n "$_rp" ] && [ -n "$_closing" ] || return 0
+  _target=$(printf '%s' "$ls_json" | "$JQ" -r --arg p "$_rp" --argjson closing "$_closing" '
+    ( [ .[] | select(.is_active) ][0] ) as $ow
+    | ($ow.active_tab_history // []) as $hist
+    | ( [ $ow.tabs[] | { id, p: ([ .windows[] | (.user_vars.cs_project // "") ] | map(select(. != "")) | (.[0] // "")) } ] ) as $tabs
+    | ( [ $tabs[] | select(.p == $p) | .id ] ) as $sess
+    | ( [ $hist[] | select(. != $closing) | select(. as $t | ($sess | index($t)) != null) ] ) as $ord
+    | ($ord[-1] // empty)
+  ' 2>>"$LOG" || true)
+  [ -n "$_target" ] && k focus-tab --match "id:$_target" >/dev/null 2>&1 || true
+}
+
 case "$verb" in
   split|tab)
     ltype=window; [ "$verb" = tab ] && ltype=tab
@@ -196,6 +219,11 @@ case "$verb" in
     ;;
 
   close-pane)
+    # If this is the tab's LAST window, closing it destroys the tab, so land
+    # focus on a same-session sibling first (same one-os-window reason as
+    # close-tab). A split among others keeps its tab, so leave focus alone.
+    _n=$(printf '%s' "$at" | "$JQ" -r '.windows | length' 2>/dev/null || echo 9)
+    [ "$_n" = "1" ] && refocus_session "$proj" "$tid"
     # Close the kitty window FIRST (stops the local reconnect loop so it can't
     # recreate the session), THEN kill the zmx session on the server.
     [ -n "$wid" ] && k close-window --match "id:$wid" >/dev/null 2>&1 || true
@@ -212,6 +240,9 @@ case "$verb" in
     # Collect every remote session in the active tab BEFORE closing it.
     sessions=$(printf '%s' "$at" | "$JQ" -r '.windows[] | (.user_vars.cs_session // "") as $v | if $v != "" then $v elif ((.cmdline|type)=="array" and (.cmdline|length)>=4 and (.cmdline[1]|test("remote-attach"))) then (.cmdline[2]+"."+.cmdline[3]) else "" end' 2>/dev/null | grep -v '^$' || true)
     tproj=$(printf '%s' "$at" | "$JQ" -r '[.windows[] | (.user_vars.cs_project // "") as $v | if $v != "" then $v elif ((.cmdline|type)=="array" and (.cmdline|length)>=3 and (.cmdline[1]|test("remote-attach"))) then .cmdline[2] else "" end] | map(select(.!="")) | .[0] // ""' 2>/dev/null || true)
+    # Land focus on a same-session sibling BEFORE closing, so we never bounce
+    # into another project's session (all sessions share one os-window).
+    refocus_session "$tproj" "$tid"
     [ -n "$tid" ] && k close-tab --match "id:$tid" >/dev/null 2>&1 || true
     if [ -n "$sessions" ]; then
       echo "remote close-tab: kill zmx $(echo $sessions | tr '\n' ' ')" >&2

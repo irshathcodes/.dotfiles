@@ -1,5 +1,5 @@
 new_tab
-layout fat
+layout grid
 cd ~
 
 launch 'kitty-unserialize-data={"id": 1}'

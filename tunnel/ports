@@ -1,0 +1,16 @@
+# Dev-server ports forwarded from moideen to this Mac (reach them at
+# http://localhost:PORT). One port per line; `#` comments and blank lines are
+# ignored. Forwarding a port whose server is not running is free and harmless.
+#
+# After editing, reload the tunnel:
+#   launchctl kickstart -k gui/$(id -u)/com.irshath.moideen-tunnel
+6851
+6855
+6856
+6857
+6860
+6861
+6869
+3000
+4000
+5000
