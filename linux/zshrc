@@ -108,3 +108,6 @@ zmf() {
   session=$(fzf --height=80% --reverse --prompt="zmx> " "${sel_opts[@]}" <<< "$sessions") || return
   [[ -n "$session" ]] && zmx attach "$session"
 }
+
+# opencode
+export PATH=/home/moideen/.opencode/bin:$PATH

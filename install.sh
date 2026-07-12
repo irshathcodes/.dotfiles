@@ -70,7 +70,8 @@ fi
 echo "==> karabiner"
 symlink "karabiner-elements.json" "$HOME/.config/karabiner/karabiner.json"
 
-echo "==> claude code hooks (settings.json stays hand-managed; it holds local keys)"
+echo "==> claude code (settings.json is shareable config; auth/tokens stay local)"
+symlink "claude/settings.json" "$HOME/.claude/settings.json"
 symlink "claude/hooks/agent-panel-state.py" "$HOME/.claude/hooks/agent-panel-state.py"
 
 echo "==> neovim"

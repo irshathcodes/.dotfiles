@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "deny": [
+      "EnterWorktree",
+      "ExitWorktree",
+      "DesignSync",
+      "NotebookEdit",
+      "ReportFindings",
+      "ScheduleWakeup",
+      "RemoteTrigger",
+      "CronCreate",
+      "CronDelete",
+      "CronList",
+      "EnterPlanMode",
+      "ExitPlanMode"
+    ]
+  },
+  "disableRemoteControl": true,
+  "model": "opus[1m]",
+  "disableClaudeAiConnectors": true,
+  "disableBundledSkills": true,
+  "disableArtifact": true,
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "dark"
+}
