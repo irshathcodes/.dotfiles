@@ -7,11 +7,8 @@ the local machine. Instead of writing terminal escape codes, this pushes a
 message via the Telegram Bot API, which lands on every device signed into
 Telegram (Mac desktop app + phone), with no binary required on the remote host.
 
-Registered in settings.json for three events; dispatch on `hook_event_name`:
-  - UserPromptSubmit : record the turn start time (feeds the Stop threshold)
-  - Stop             : notify only if the turn ran >= STOP_THRESHOLD_S (avoids
-                       spamming on quick back-and-forth turns)
-  - Notification     : always notify (Claude needs input / a permission decision)
+Registered in settings.json for the Notification event (Claude needs input or a
+permission decision).
 
 Secrets are read from the environment (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID),
 falling back to parsing ~/.dotfiles/.env directly (the .env is gitignored, so it
@@ -26,18 +23,9 @@ import html
 import json
 import os
 import sys
-import time
 import urllib.parse
 import urllib.request
 from pathlib import Path
-
-# Only notify on Stop if the turn took at least this long (seconds). Keeps quick
-# interactive turns from buzzing every device while still flagging long runs.
-STOP_THRESHOLD_S = 30
-
-# Where per-session turn-start timestamps are stashed (written on UserPromptSubmit,
-# read + removed on Stop).
-STATE_DIR = Path(os.environ.get("TMPDIR", "/tmp"))
 
 
 def load_creds():
@@ -85,49 +73,20 @@ def send(text):
         pass
 
 
-def start_file(session_id):
-    safe = "".join(c for c in (session_id or "unknown") if c.isalnum() or c in "-_")
-    return STATE_DIR / f"claude-turn-start-{safe}"
-
-
 def main():
     try:
         payload = json.load(sys.stdin)
     except Exception:
         return
 
-    event = payload.get("hook_event_name", "")
-    session_id = payload.get("session_id", "")
+    if payload.get("hook_event_name", "") != "Notification":
+        return
+
     cwd = payload.get("cwd") or os.getcwd()
     project = html.escape(os.path.basename(cwd.rstrip("/")) or cwd)
     host = html.escape(os.environ.get("CLAUDE_NOTIFY_HOST", os.uname().nodename.split(".")[0]))
-
-    if event == "UserPromptSubmit":
-        try:
-            start_file(session_id).write_text(str(time.time()))
-        except OSError:
-            pass
-        return
-
-    if event == "Stop":
-        elapsed = None
-        sf = start_file(session_id)
-        try:
-            if sf.exists():
-                elapsed = time.time() - float(sf.read_text().strip())
-                sf.unlink()
-        except (OSError, ValueError):
-            elapsed = None
-        if elapsed is not None and elapsed < STOP_THRESHOLD_S:
-            return
-        dur = f" ({int(elapsed)}s)" if elapsed is not None else ""
-        send(f"✅ <b>Claude finished</b>{dur}\n\U0001f4c1 {project} · {host}")
-        return
-
-    if event == "Notification":
-        msg = html.escape(payload.get("message", "Claude needs your attention"))
-        send(f"\U0001f514 <b>Claude needs you</b>\n{msg}\n\U0001f4c1 {project} · {host}")
-        return
+    msg = html.escape(payload.get("message", "Claude needs your attention"))
+    send(f"\U0001f514 <b>Claude needs you</b>\n{msg}\n\U0001f4c1 {project} · {host}")
 
 
 if __name__ == "__main__":

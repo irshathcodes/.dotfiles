@@ -24,27 +24,7 @@
   "skipDangerousModePermissionPrompt": true,
   "theme": "dark",
   "hooks": {
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$HOME/.dotfiles/claude/hooks/telegram-notify.py\""
-          }
-        ]
-      }
-    ],
     "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$HOME/.dotfiles/claude/hooks/telegram-notify.py\""
-          }
-        ]
-      }
-    ],
-    "Stop": [
       {
         "hooks": [
           {
