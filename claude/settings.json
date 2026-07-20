@@ -1,6 +1,5 @@
 {
   "permissions": {
-    "defaultMode": "bypassPermissions",
     "deny": [
       "EnterWorktree",
       "ExitWorktree",
@@ -14,13 +13,46 @@
       "CronList",
       "EnterPlanMode",
       "ExitPlanMode"
-    ]
+    ],
+    "defaultMode": "bypassPermissions"
   },
-  "disableRemoteControl": true,
   "model": "opus[1m]",
   "disableClaudeAiConnectors": true,
   "disableBundledSkills": true,
+  "disableRemoteControl": true,
   "disableArtifact": true,
   "skipDangerousModePermissionPrompt": true,
-  "theme": "dark"
+  "theme": "dark",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME/.dotfiles/claude/hooks/telegram-notify.py\""
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME/.dotfiles/claude/hooks/telegram-notify.py\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME/.dotfiles/claude/hooks/telegram-notify.py\""
+          }
+        ]
+      }
+    ]
+  }
 }
