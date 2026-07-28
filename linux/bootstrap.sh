@@ -220,6 +220,8 @@ mkdir -p "$HOME/.config/nvim" "$HOME/.config/git"
 ln -sf "$DOTFILES/init.lua"        "$HOME/.config/nvim/init.lua"
 ln -sf "$DOTFILES/lazy-lock.json"  "$HOME/.config/nvim/lazy-lock.json"
 ln -sf "$DOTFILES/git/ignore"      "$HOME/.config/git/ignore"
+mkdir -p "$HOME/.config/hunk"
+ln -sf "$DOTFILES/hunk/config.toml" "$HOME/.config/hunk/config.toml"
 
 # cs / kittymux session layer: the `cs` resolver on PATH, its zsh prompt hook
 # (sourced by zshrc), and the project registry. The registry is edited in-repo

@@ -19,10 +19,6 @@
   "model": "opus[1m]",
   "disableClaudeAiConnectors": true,
   "disableBundledSkills": true,
-  "disableRemoteControl": true,
-  "disableArtifact": true,
-  "skipDangerousModePermissionPrompt": true,
-  "theme": "dark",
   "hooks": {
     "Notification": [
       {
@@ -34,5 +30,10 @@
         ]
       }
     ]
-  }
+  },
+  "disableRemoteControl": true,
+  "disableArtifact": true,
+  "effortLevel": "medium",
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "dark"
 }

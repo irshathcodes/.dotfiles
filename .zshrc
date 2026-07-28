@@ -151,27 +151,18 @@ fe() {
   [[ -n "$files" ]] && ${EDITOR:-nvim} "${files[@]}"
 }
 
- ghdiff() {                                                                                                            
-    local pr=$1                                                   
-    [[ -z "$pr" ]] && { echo "usage: ghdiff <pr>"; return 1; }
-                                                                                                                        
-    local base
-    base=$(gh pr view "$pr" --json baseRefName -q .baseRefName) || return 1                                             
-                                                                                                                        
-    local tmp; tmp=$(mktemp -d -t "ghdiff-$pr")
-    git fetch origin "pull/$pr/head:refs/ghdiff/$pr" >/dev/null 2>&1 || return 1                                        
-    git fetch origin "$base" >/dev/null 2>&1                                                                            
-                                                                                                                        
-    git worktree add --detach "$tmp/base" "origin/$base" >/dev/null                                                     
-    git worktree add --detach "$tmp/head" "refs/ghdiff/$pr" >/dev/null                                                  
-                                                                                                                        
-    kitten diff "$tmp/base" "$tmp/head"
-                                                                                                                        
-    git worktree remove --force "$tmp/head" >/dev/null            
-    git worktree remove --force "$tmp/base" >/dev/null
-    git update-ref -d "refs/ghdiff/$pr"                                                                                 
-    rm -rf "$tmp"
-  }
+# Review a GitHub PR in hunk. Fetches the PR patch and hands it to `hunk
+# patch` — no worktrees needed, unlike the old kitten-diff dir-diff approach.
+ghdiff() {
+  local pr=$1
+  [[ -z "$pr" ]] && { echo "usage: ghdiff <pr>"; return 1; }
+
+  local patch; patch=$(mktemp -t "ghdiff-$pr.XXXXXX.patch")
+  gh pr diff "$pr" > "$patch" || { rm -f "$patch"; return 1; }
+
+  hunk patch "$patch"
+  rm -f "$patch"
+}
 
 # pnpm
 export PNPM_HOME="/Users/irshath/Library/pnpm"

@@ -12,12 +12,13 @@ alias gpl="git pull"
 alias gfo="git fetch origin"
 alias gco="git checkout"
 alias gcob="git checkout -b"
+alias gd="hunk diff"
+alias gds="hunk diff --staged"
 alias gl="git log --oneline"
 alias glg="git log --graph --oneline"
 alias glog="git log --graph --pretty=format:'%C(yellow)%h%C(reset) - %C(cyan)%an%C(reset), %C(green)%ar%C(reset) : %s'"
 alias ghpa="gh pr review --approve"
 
-alias la="ls -a"
+alias opencode="opencode2"
 
-# Claude Code
-alias cc="claude --dangerously-skip-permissions"
+

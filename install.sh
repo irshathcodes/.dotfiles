@@ -81,6 +81,9 @@ symlink "lazy-lock.json" "$HOME/.config/nvim/lazy-lock.json"
 echo "==> git global ignore"
 symlink "git/ignore"    "$HOME/.config/git/ignore"
 
+echo "==> hunk (TUI git diff viewer)"
+symlink "hunk/config.toml" "$HOME/.config/hunk/config.toml"
+
 echo "==> pi coding agent (shareable config only; secrets/runtime stay local)"
 PI_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
 for name in settings.json mcp.json models.json extensions docs; do

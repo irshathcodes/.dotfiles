@@ -7,9 +7,23 @@
 	ui = auto
 [core]
 	editor = nvim
+# hunk (TUI diff viewer) is scoped to the diff-producing commands only.
+# Do NOT set core.pager = hunk pager: that routes *every* command through it,
+# and `git log` then hangs instead of paging. pager.<cmd> overrides core.pager,
+# so everything not listed here keeps git's default pager.
+[pager]
+	diff = hunk pager
+	show = hunk pager
 [push]
 	autoSetupRemote = true
 [pull]
 	rebase = false
 [rerere]
 	enabled = true
+[diff]
+	tool = hunk
+[difftool]
+	prompt = false
+	trustExitCode = true
+[difftool "hunk"]
+	cmd = hunk difftool "$LOCAL" "$REMOTE"
