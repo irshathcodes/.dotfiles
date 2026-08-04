@@ -33,7 +33,8 @@
   },
   "disableRemoteControl": true,
   "disableArtifact": true,
-  "effortLevel": "medium",
+  "effortLevel": "high",
   "skipDangerousModePermissionPrompt": true,
-  "theme": "dark"
+  "theme": "dark",
+  "autoCompactEnabled": true
 }

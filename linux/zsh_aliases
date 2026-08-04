@@ -20,5 +20,6 @@ alias glog="git log --graph --pretty=format:'%C(yellow)%h%C(reset) - %C(cyan)%an
 alias ghpa="gh pr review --approve"
 
 alias opencode="opencode2"
+alias claude-sw='CLAUDE_CONFIG_DIR=~/.claude-sw claude'
 
 

@@ -19,4 +19,4 @@ alias glog="git log --graph --pretty=format:'%C(yellow)%h%C(reset) - %C(cyan)%an
 alias nosleep="sudo pmset -a disablesleep 1"
 alias rsleep="sudo pmset -a disablesleep 0"
 
-
+alias claude-sw='CLAUDE_CONFIG_DIR=~/.claude-sw claude'

@@ -9,11 +9,18 @@ git_prompt_info() {
   while [[ -n $d ]]; do
     if [[ -d $d/.git ]]; then gitdir=$d/.git; break
     elif [[ -f $d/.git ]]; then               # worktree / submodule
-      gitdir=${$(<$d/.git)#gitdir: }; [[ $gitdir != /* ]] && gitdir=$d/$gitdir; break
+      # File contains "gitdir: <path>". `read` is a builtin — no fork, and it
+      # avoids ${$(<f)#pat}, which silently word-splits in an unquoted assignment
+      # and so never strips the "gitdir: " prefix.
+      read -r gitdir < $d/.git; gitdir=${gitdir#gitdir: }
+      [[ $gitdir != /* ]] && gitdir=$d/$gitdir; break
     fi
     d=${d%/*}
   done
-  if [[ -z $gitdir ]] || ! read -r ref < $gitdir/HEAD 2>/dev/null; then
+  # The 2>/dev/null must wrap the whole block: zsh reports a failed input redirect
+  # at shell level, so `read < missing 2>/dev/null` still prints. { } is not a
+  # subshell, so $ref survives.
+  if [[ -z $gitdir ]] || ! { read -r ref < $gitdir/HEAD } 2>/dev/null; then
     vcs_info_msg_0_=""; return
   fi
   if [[ $ref == ref:* ]]; then vcs_info_msg_0_=" (${ref##*/})"
