@@ -22,10 +22,21 @@ PORTS_FILE="${TUNNEL_PORTS_FILE:-$DIR/ports}"
 
 [ -r "$PORTS_FILE" ] || { echo "tunnel: cannot read $PORTS_FILE" >&2; exit 1; }
 
-# Build the -L flags from the ports file.
+# Build the -L flags from the ports file. A line may be a single port (6851) or
+# an inclusive range (3000-3100), which expands to one forward per port. Keep
+# ranges modest: every port is a local listening socket and an open fd.
 fwd=()
 while read -r port _; do
-  case "$port" in ''|\#*) continue ;; esac
+  case "$port" in
+    ''|\#*) continue ;;
+    *-*)
+      lo="${port%%-*}" hi="${port##*-}"
+      for ((p = lo; p <= hi; p++)); do
+        fwd+=(-L "${p}:localhost:${p}")
+      done
+      continue
+      ;;
+  esac
   fwd+=(-L "${port}:localhost:${port}")
 done < "$PORTS_FILE"
 

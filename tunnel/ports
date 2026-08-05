@@ -1,6 +1,8 @@
 # Dev-server ports forwarded from moideen to this Mac (reach them at
 # http://localhost:PORT). One port per line; `#` comments and blank lines are
-# ignored. Forwarding a port whose server is not running is free and harmless.
+# ignored. A line may also be an inclusive range, e.g. 3000-3100, but keep the
+# total modest: each port is a local socket and two fds, and ssh starts failing
+# with "poll: Invalid argument" once there are too many forwards.
 #
 # After editing, reload the tunnel:
 #   launchctl kickstart -k gui/$(id -u)/com.irshath.moideen-tunnel
@@ -12,6 +14,9 @@
 6861
 6869
 3000
+3001
+3002
+3003
 4000
 5000
 8787
