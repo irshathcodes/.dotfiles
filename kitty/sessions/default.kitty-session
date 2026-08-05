@@ -1,6 +1,9 @@
+# default — the session kitty opens on startup (startup_session in kitty.conf).
+# One shell in $HOME. Template; the live copy lives in
+# ~/.local/state/kitty/sessions/default.kitty-session.
+
 new_tab
 layout grid
 cd ~
-
-launch 'kitty-unserialize-data={"id": 1}'
+launch
 focus

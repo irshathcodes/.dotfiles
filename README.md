@@ -26,7 +26,29 @@ in the way before creating a symlink.
 | `karabiner-elements.json` | `~/.config/karabiner/karabiner.json` |
 | `init.lua`, `lazy-lock.json` | `~/.config/nvim/`                  |
 | `git/ignore`              | `~/.config/git/ignore` (global gitignore) |
-| `pi/agent/*`              | `~/.pi/agent/*` (see `pi/README.md`) |
+| `hunk/config.toml`        | `~/.config/hunk/config.toml`         |
+
+`kitty/sessions/*.kitty-session` are templates, not symlinks: `install.sh` copies
+any that are missing into `~/.local/state/kitty/sessions/`, which is what kitty
+actually loads. `cmd+shift+s` saves the live layout over the copy there, so
+rearranging tabs never dirties this repo.
+
+## Sessions
+
+`cmd+j` is the leader for switching sessions, all local to this Mac:
+
+| Key            | Session                        |
+|----------------|--------------------------------|
+| `cmd+j` `b`    | buildkit (`~/projects/buildkit`) |
+| `cmd+j` `u`    | ui (`~/sintj/ui`)              |
+| `cmd+j` `d`    | default (`~`)                  |
+| `cmd+j` `[`    | previous session               |
+| `cmd+j` `/`    | fuzzy-pick an open session     |
+| `cmd+j` `o`    | new session (project or scratch) |
+
+Each project session is 4 tabs: nvim and claude (stacked), a server pane and a
+shell (grid). `cmd+shift+s` persists the current tabs/splits/layouts/cwds — and
+the programs running in them — back to the session file.
 
 ## Secrets
 
@@ -34,8 +56,5 @@ The repo is **public**, so secrets never get committed.
 
 - All secrets live in one file: `.env` (gitignored, `chmod 600`).
 - `.env.example` is the committed template — copy it to `.env` and fill in values.
-- `.zshrc` sources `.env` automatically, so tools (e.g. `pi`'s `mcp.json`
-  `${VAR}` interpolation) can read them.
-
-See [`pi/README.md`](pi/README.md) for details on the `pi` coding-agent config
-and which of its files stay local per machine (auth tokens, runtime/cache).
+- `.zshrc` sources `.env` automatically, so any tool that interpolates `${VAR}`
+  can read them.

@@ -1,0 +1,28 @@
+# buildkit — 4 tabs: editor / claude / server / shell, all in the project dir.
+# Template. install.sh copies it to ~/.local/state/kitty/sessions/ (if missing),
+# and that copy is what cmd+j b opens and what cmd+shift+s saves over, so live
+# layout tweaks never dirty this repo.
+#
+# --hold keeps the pane alive as a shell when the program exits, so quitting
+# nvim/claude doesn't take the tab with it.
+
+new_tab
+layout stack
+cd /Users/irshath/projects/buildkit
+launch --hold nvim .
+focus
+
+new_tab
+layout stack
+cd /Users/irshath/projects/buildkit
+launch --hold claude
+
+new_tab
+layout grid
+cd /Users/irshath/projects/buildkit
+launch
+
+new_tab
+layout grid
+cd /Users/irshath/projects/buildkit
+launch

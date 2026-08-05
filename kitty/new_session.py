@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
-"""Kitten: a small menu to spin up a new session, local or on moideen.
+"""Kitten: a small menu to spin up a new kitty session.
 
-Bound to `cmd+j o`. Four choices:
+Bound to `cmd+j o`. Two choices:
 
-  1  local project    4 tabs (nvim/claude stacked, server/shell grid) in a dir
-  2  moideen project  same, but remote via remote-attach.sh (persistent)
-  3  local scratch     one tab in ~
-  4  moideen scratch   one remote tab in ~ (persistent)
+  1  project   4 tabs (nvim/claude stacked, server/shell grid) in a directory
+  2  scratch   one tab in ~
 
-Project entries prompt for a directory; scratch entries prompt for a session
-name. Local sessions are written to a temp file (ephemeral). Remote sessions
-are written to ~/.local/state/kittymux/<name>.kitty-session so they persist and
-show up in the `cmd+j /` picker, exactly like the registered projects. The zmx
-session is kept alive server-side regardless, so reopening reattaches.
+A project prompts for a directory and its session file is written to
+~/.local/state/kitty/sessions/<name>.kitty-session, next to the ones seeded by
+install.sh — so it persists, can be re-opened, and cmd+shift+s saves over it. An
+existing file for that name is reused rather than clobbered. A scratch session is
+written to a temp file and thrown away once loaded.
 """
 from __future__ import annotations
 
@@ -33,21 +31,18 @@ except Exception:  # pragma: no cover - only absent outside kitty
 
 LOG_PATH = "/tmp/kitty-new-session.log"
 HOME = os.path.expanduser("~")
-STATE_DIR = os.path.join(HOME, ".local/state/kittymux")
-RA = os.path.join(HOME, ".config/kitty/remote-attach.sh")
+STATE_DIR = os.path.join(HOME, ".local/state/kitty/sessions")
 DEFAULT_BASE = HOME + os.sep
 
-# menu key -> (location, kind)
+# menu key -> kind
 MENU = {
-    "1": ("local", "project"),
-    "2": ("remote", "project"),
-    "3": ("local", "scratch"),
-    "4": ("remote", "scratch"),
+    "1": "project",
+    "2": "scratch",
 }
 
 
 def sanitize(name: str) -> str:
-    """A safe session/zmx identifier: keep [A-Za-z0-9_-], collapse the rest to -."""
+    """A safe session-file name: keep [A-Za-z0-9_-], collapse the rest to -."""
     out = re.sub(r"[^A-Za-z0-9_-]+", "-", name.strip()).strip("-")
     return out
 
@@ -78,7 +73,7 @@ def complete(path: str) -> str:
     return path
 
 
-def menu() -> tuple[str, str] | None:
+def menu() -> str | None:
     fd = sys.stdin.fileno()
     old = termios.tcgetattr(fd)
     tty.setcbreak(fd)
@@ -86,11 +81,9 @@ def menu() -> tuple[str, str] | None:
         while True:
             sys.stdout.write("\x1b[2J\x1b[H")
             sys.stdout.write("New session\r\n\r\n")
-            sys.stdout.write("  1  local project     nvim / claude / server / shell in a folder\r\n")
-            sys.stdout.write("  2  moideen project   same, on moideen (persistent)\r\n")
-            sys.stdout.write("  3  local scratch      one tab in ~\r\n")
-            sys.stdout.write("  4  moideen scratch    one tab in ~ on moideen (persistent)\r\n\r\n")
-            sys.stdout.write("  1-4 select   Esc cancel\r\n")
+            sys.stdout.write("  1  project    nvim / claude / server / shell in a folder (saved)\r\n")
+            sys.stdout.write("  2  scratch    one tab in ~ (throwaway)\r\n\r\n")
+            sys.stdout.write("  1-2 select   Esc cancel\r\n")
             sys.stdout.flush()
             ch = sys.stdin.read(1)
             if ch in MENU:
@@ -153,21 +146,22 @@ def show_error(msg: str) -> None:
 
 # ---- session-file builders --------------------------------------------------
 
-def local_project_text(directory: str) -> str:
-    # local mirrors the old cmd+j o template (no auto-claude, which may be a
-    # shell alias rather than a binary here). Layout: 1&2 stack, 3&4 grid.
+def project_text(directory: str) -> str:
+    # Same shape as the checked-in templates (kitty/sessions/*.kitty-session):
+    # editor and claude stacked, server and shell in a grid. --hold keeps the
+    # pane as a shell when the program exits. Tab titles are left dynamic so the
+    # running program names them.
     tabs = [
-        ("nvim", "stack", "nvim ."),
-        ("shell", "stack", ""),
-        ("server", "grid", ""),
-        ("shell", "grid", ""),
+        ("stack", "--hold nvim ."),
+        ("stack", "--hold claude"),
+        ("grid", ""),
+        ("grid", ""),
     ]
     out = []
-    for i, (title, layout, cmd) in enumerate(tabs):
-        out.append(f"new_tab {title}")
+    for i, (layout, cmd) in enumerate(tabs):
+        out.append("new_tab")
         out.append(f"layout {layout}")
         out.append(f"cd {directory}")
-        out.append("")
         out.append(("launch " + cmd).rstrip())
         if i == 0:
             out.append("focus")
@@ -175,37 +169,8 @@ def local_project_text(directory: str) -> str:
     return "\n".join(out)
 
 
-def remote_project_text(base: str, path: str) -> str:
-    # path is passed literally to remote-attach.sh (kitty does not tilde-expand
-    # launch ARGS), so ~ is resolved server-side by cs. cs_cwd carries it so a
-    # kittymux save round-trips the dir.
-    tabs = [("edit", "stack"), ("cc", "stack"), ("srv", "grid"), ("sh", "grid")]
-    out = []
-    for i, (nm, layout) in enumerate(tabs):
-        out.append("new_tab")
-        out.append(f"layout {layout}")
-        out.append(
-            f"launch --var=cs_session={base}.{nm} --var=cs_project={base} "
-            f"--var=cs_cwd={path} {RA} {base} {nm} {path}"
-        )
-        if i == 0:
-            out.append("focus")
-        out.append("")
-    return "\n".join(out)
-
-
-def local_scratch_text(name: str) -> str:
+def scratch_text(name: str) -> str:
     return f"new_tab {name}\ncd {HOME}\n\nlaunch\nfocus\n"
-
-
-def remote_scratch_text(name: str) -> str:
-    # ~ passed literally -> cs expands to the server home.
-    return (
-        f"new_tab\n"
-        f"launch --var=cs_session={name}.sh --var=cs_project={name} "
-        f"--var=cs_cwd=~ {RA} {name} sh ~\n"
-        f"focus\n"
-    )
 
 
 # ---- file writers -----------------------------------------------------------
@@ -232,43 +197,31 @@ def write_state(name: str, text: str) -> str:
 # ---- orchestration ----------------------------------------------------------
 
 def main_impl(args: list[str]) -> str:
-    choice = menu()
-    if not choice:
+    kind = menu()
+    if not kind:
         return json.dumps({})
-    loc, kind = choice
 
     if kind == "project":
-        where = " on moideen" if loc == "remote" else ""
-        # local: prefill the Mac home and offer FS completion; remote: prefill
-        # ~/ (a server-relative path, expanded on moideen by cs), no completion.
-        base = DEFAULT_BASE if loc == "local" else "~/"
-        raw = prompt_line(f"New project directory{where}", base, allow_complete=(loc == "local"))
+        raw = prompt_line("New project directory", DEFAULT_BASE, allow_complete=True)
         if not raw:
             return json.dumps({})
-        if loc == "local":
-            directory = expand(raw)
-            if not os.path.isdir(directory):
-                show_error(f"Not a directory: {directory}")
-                return json.dumps({})
-            name = os.path.basename(directory.rstrip(os.sep)) or "session"
-            path = write_temp(name, local_project_text(directory))
-            return json.dumps({"action": "goto_session", "path": path, "cleanup": True})
-        # remote
-        base = sanitize(os.path.basename(raw.strip().rstrip("/"))) or "session"
-        path = write_state(base, remote_project_text(base, raw.strip()))
+        directory = expand(raw)
+        if not os.path.isdir(directory):
+            show_error(f"Not a directory: {directory}")
+            return json.dumps({})
+        name = sanitize(os.path.basename(directory.rstrip(os.sep))) or "session"
+        # Persisted, so the session survives a kitty restart and cmd+shift+s has
+        # a file to save over.
+        path = write_state(name, project_text(directory))
         return json.dumps({"action": "goto_session", "path": path, "cleanup": False})
 
-    # kind == "scratch"
-    where = " on moideen" if loc == "remote" else ""
-    raw = prompt_line(f"New scratch session name{where}", "", allow_complete=False)
+    # kind == "scratch": ephemeral, nothing to keep on disk.
+    raw = prompt_line("New scratch session name", "", allow_complete=False)
     name = sanitize(raw or "")
     if not name:
         return json.dumps({})
-    if loc == "local":
-        path = write_temp(name, local_scratch_text(name))
-        return json.dumps({"action": "goto_session", "path": path, "cleanup": True})
-    path = write_state(name, remote_scratch_text(name))
-    return json.dumps({"action": "goto_session", "path": path, "cleanup": False})
+    path = write_temp(name, scratch_text(name))
+    return json.dumps({"action": "goto_session", "path": path, "cleanup": True})
 
 
 def cli_main(args: list[str]) -> str:

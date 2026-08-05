@@ -1,9 +1,4 @@
-alias kuat="kubectl --context arn:aws:eks:us-west-2:559076975273:cluster/ppx-uat-05-26"
-alias ksand="kubectl --context arn:aws:eks:us-west-2:559076975273:cluster/PPX-sandbox"
-alias kprod="kubectl --context arn:aws:eks:us-west-2:559076975273:cluster/PPX-production"
-
 alias gs="git status"
-alias ga="fgf"
 alias gc="git commit"
 alias gcm="git commit -m"
 alias gp="git push"
@@ -19,4 +14,3 @@ alias glog="git log --graph --pretty=format:'%C(yellow)%h%C(reset) - %C(cyan)%an
 alias nosleep="sudo pmset -a disablesleep 1"
 alias rsleep="sudo pmset -a disablesleep 0"
 
-alias claude-sw='CLAUDE_CONFIG_DIR=~/.claude-sw claude'

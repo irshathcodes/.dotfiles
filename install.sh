@@ -36,36 +36,23 @@ symlink ".gitconfig"    "$HOME/.gitconfig"
 
 echo "==> kitty"
 symlink "kitty"         "$HOME/.config/kitty"
-# Seed the per-project kitty session state (default layouts) if missing, so the
-# native `cmd+j <letter>` goto_session always has a file to open. Idempotent;
-# pure local file writes (no kitty/ssh needed). Live layouts auto-update after.
-# `if` (not `&&/||`) so a real failure surfaces loudly instead of being masked
-# by a trailing echo that always succeeds under `set -e`.
-if "$DOTFILES/kitty/kittymux.sh" seed-all; then
-  echo "seed: kitty session state ready"
-else
-  echo "WARNING: kittymux seed-all failed; run '~/.config/kitty/kittymux.sh seed-all' manually" >&2
-fi
 
-echo "==> moideen dev-server tunnel (launchd)"
-# A single persistent background SSH tunnel forwarding remote dev-server ports
-# to this Mac (see tunnel/tunnel.sh). launchd auto-starts it at login and
-# restarts it if the process dies. The plist needs an absolute path to the
-# script (launchd does NOT expand ~), so we render it from a template.
-symlink "tunnel" "$HOME/.config/tunnel"
-TUNNEL_LABEL="com.irshath.moideen-tunnel"
-TUNNEL_PLIST="$HOME/Library/LaunchAgents/$TUNNEL_LABEL.plist"
-mkdir -p "$HOME/Library/LaunchAgents"
-sed "s|__TUNNEL_SH__|$HOME/.config/tunnel/tunnel.sh|g" \
-  "$DOTFILES/tunnel/$TUNNEL_LABEL.plist.template" > "$TUNNEL_PLIST"
-# Reload cleanly: bootout any old instance (ignore "not loaded") then bootstrap.
-launchctl bootout "gui/$(id -u)/$TUNNEL_LABEL" 2>/dev/null || true
-if launchctl bootstrap "gui/$(id -u)" "$TUNNEL_PLIST" 2>/dev/null; then
-  echo "tunnel: launchd agent loaded (log: /tmp/moideen-tunnel.log)"
-else
-  echo "WARNING: launchctl bootstrap failed; load manually with:" >&2
-  echo "  launchctl bootstrap gui/\$(id -u) $TUNNEL_PLIST" >&2
-fi
+# Seed the live kitty session files from the templates in kitty/sessions/, so
+# `cmd+j <letter>` and startup_session always have a file to open on a fresh
+# machine. COPIES, not symlinks: cmd+shift+s (save_as_session) writes over the
+# live file, and that must not dirty this repo. An existing file is left alone —
+# it is your saved layout and outranks the template.
+SESSION_DIR="$HOME/.local/state/kitty/sessions"
+mkdir -p "$SESSION_DIR"
+for f in "$DOTFILES"/kitty/sessions/*.kitty-session; do
+  dst="$SESSION_DIR/$(basename "$f")"
+  if [[ -e "$dst" ]]; then
+    echo "ok:   $dst (keeping saved layout)"
+  else
+    cp "$f" "$dst"
+    echo "seed: $dst"
+  fi
+done
 
 echo "==> karabiner"
 symlink "karabiner-elements.json" "$HOME/.config/karabiner/karabiner.json"
@@ -84,12 +71,6 @@ symlink "git/ignore"    "$HOME/.config/git/ignore"
 echo "==> hunk (TUI git diff viewer)"
 symlink "hunk/config.toml" "$HOME/.config/hunk/config.toml"
 
-echo "==> pi coding agent (shareable config only; secrets/runtime stay local)"
-PI_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
-for name in settings.json mcp.json models.json extensions docs; do
-  symlink "pi/agent/$name" "$PI_DIR/$name"
-done
-
 echo "==> secrets"
 if [[ ! -f "$DOTFILES/.env" ]]; then
   cp "$DOTFILES/.env.example" "$DOTFILES/.env"
@@ -104,6 +85,5 @@ cat <<EOF
 
 Done.
 - Secrets live in $DOTFILES/.env (gitignored). .zshrc sources it automatically.
-- 'pi' rebuilds ~/.pi/agent/npm from settings.json 'packages' on next run.
-- auth.json (OAuth tokens) stays local per machine — log in once with pi.
+- kitty sessions live in $SESSION_DIR (seeded from kitty/sessions/).
 EOF

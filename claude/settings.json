@@ -19,18 +19,6 @@
   "model": "opus[1m]",
   "disableClaudeAiConnectors": true,
   "disableBundledSkills": true,
-  "hooks": {
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$HOME/.dotfiles/claude/hooks/telegram-notify.py\""
-          }
-        ]
-      }
-    ]
-  },
   "disableRemoteControl": true,
   "disableArtifact": true,
   "effortLevel": "high",

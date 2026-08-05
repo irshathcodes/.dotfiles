@@ -1,2 +1,5 @@
 # secrets — never commit (repo is public). Real values live in .env
 .env
+
+# python bytecode from the kitty kittens
+__pycache__/
