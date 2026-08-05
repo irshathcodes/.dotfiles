@@ -36,5 +36,6 @@
   "effortLevel": "high",
   "skipDangerousModePermissionPrompt": true,
   "theme": "dark",
-  "autoCompactEnabled": true
+  "autoCompactEnabled": true,
+  "autoCompactWindow": 400000
 }
