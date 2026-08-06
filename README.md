@@ -40,7 +40,7 @@ rearranging tabs never dirties this repo.
 | Key            | Session                        |
 |----------------|--------------------------------|
 | `cmd+j` `b`    | buildkit (`~/projects/buildkit`) |
-| `cmd+j` `u`    | ui (`~/sintj/ui`)              |
+| `cmd+j` `u`    | ui                             |
 | `cmd+j` `d`    | default (`~`)                  |
 | `cmd+j` `[`    | previous session               |
 | `cmd+j` `/`    | fuzzy-pick an open session     |
